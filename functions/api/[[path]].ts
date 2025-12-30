@@ -35,8 +35,8 @@ async function generateToken(payload: any, secret?: string): Promise<string> {
   const jwtSecret = secret || 'default-secret'
   
   const encoder = new TextEncoder()
-  const headerB64 = btoa(JSON.stringify(header)).replace(/=/g, '').replace(/+/g, '-').replace(///g, '_')
-  const payloadB64 = btoa(JSON.stringify(payload)).replace(/=/g, '').replace(/+/g, '-').replace(///g, '_')
+  const headerB64 = btoa(JSON.stringify(header)).replace(/=/g, '').replace(/\\+/g, '-').replace(/\\//g, '_')
+  const payloadB64 = btoa(JSON.stringify(payload)).replace(/=/g, '').replace(/\\+/g, '-').replace(/\\//g, '_')
   
   const data = headerB64 + '.' + payloadB64
   const key = await crypto.subtle.importKey(
@@ -49,7 +49,7 @@ async function generateToken(payload: any, secret?: string): Promise<string> {
   
   const signature = await crypto.subtle.sign('HMAC', key, encoder.encode(data))
   const signatureB64 = btoa(String.fromCharCode(...new Uint8Array(signature)))
-    .replace(/=/g, '').replace(/+/g, '-').replace(///g, '_')
+    .replace(/=/g, '').replace(/\\+/g, '-').replace(/\\//g, '_')
   
   return data + '.' + signatureB64
 }
