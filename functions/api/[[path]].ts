@@ -3,9 +3,7 @@ import { Hono } from 'hono'
 import { handle } from 'hono/cloudflare-pages'
 import { getCookie, setCookie, deleteCookie } from 'hono/cookie'
 import { nanoid } from 'nanoid'
-import bcrypt from 'bcryptjs'
 import { D1Adapter } from '../../server/db/d1.js'
-import { generateToken, verifyToken, generateSessionId } from '../../server/utils/jwt.js'
 
 type Bindings = {
   DB?: any
@@ -29,6 +27,81 @@ function getDatabase(env: Bindings): D1Adapter {
     }
   }
   return dbAdapter
+}
+
+// Cloudflare Workers compatible JWT functions
+async function generateToken(payload: any, secret?: string): Promise<string> {
+  const header = { alg: 'HS256', typ: 'JWT' }
+  const jwtSecret = secret || 'default-secret'
+  
+  const encoder = new TextEncoder()
+  const headerB64 = btoa(JSON.stringify(header)).replace(/=/g, '').replace(/+/g, '-').replace(///g, '_')
+  const payloadB64 = btoa(JSON.stringify(payload)).replace(/=/g, '').replace(/+/g, '-').replace(///g, '_')
+  
+  const data = headerB64 + '.' + payloadB64
+  const key = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(jwtSecret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  )
+  
+  const signature = await crypto.subtle.sign('HMAC', key, encoder.encode(data))
+  const signatureB64 = btoa(String.fromCharCode(...new Uint8Array(signature)))
+    .replace(/=/g, '').replace(/+/g, '-').replace(///g, '_')
+  
+  return data + '.' + signatureB64
+}
+
+async function verifyToken(token: string, secret?: string): Promise<any> {
+  try {
+    const parts = token.split('.')
+    if (parts.length !== 3) return null
+    
+    const [headerB64, payloadB64, signatureB64] = parts
+    const jwtSecret = secret || 'default-secret'
+    
+    const encoder = new TextEncoder()
+    const data = headerB64 + '.' + payloadB64
+    
+    const key = await crypto.subtle.importKey(
+      'raw',
+      encoder.encode(jwtSecret),
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['verify']
+    )
+    
+    const signature = Uint8Array.from(atob(signatureB64.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0))
+    const isValid = await crypto.subtle.verify('HMAC', key, signature, encoder.encode(data))
+    
+    if (!isValid) return null
+    
+    const payload = JSON.parse(atob(payloadB64.replace(/-/g, '+').replace(/_/g, '/')))
+    return payload
+  } catch (error) {
+    return null
+  }
+}
+
+function generateSessionId(): string {
+  return nanoid()
+}
+
+// Cloudflare Workers compatible password hashing
+async function hashPassword(password: string): Promise<string> {
+  const encoder = new TextEncoder()
+  const data = encoder.encode(password)
+  const hash = await crypto.subtle.digest('SHA-256', data)
+  return Array.from(new Uint8Array(hash))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('')
+}
+
+async function comparePassword(password: string, hash: string): Promise<boolean> {
+  const passwordHash = await hashPassword(password)
+  return passwordHash === hash
 }
 
 // Middleware: Initialize database
@@ -79,7 +152,7 @@ app.post('/api/install', async (c) => {
       return c.json({ error: 'Missing required fields' }, 400)
     }
 
-    const hashedPassword = await bcrypt.hash(adminPassword, 10)
+    const hashedPassword = await hashPassword(adminPassword)
 
     const settings = [
       ['site.title', siteName],
@@ -122,7 +195,7 @@ app.post('/api/login', async (c) => {
       return c.json({ ok: false, error: 'email_incorrect' }, 401)
     }
 
-    const isValidPassword = await bcrypt.compare(password, adminPassword.value)
+    const isValidPassword = await comparePassword(password, adminPassword.value)
     if (!isValidPassword) {
       return c.json({ ok: false, error: 'invalid_credentials' }, 401)
     }

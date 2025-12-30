@@ -6,13 +6,9 @@
   "dependencies": {
     "hono": "^4.3.1",
     "nanoid": "^5.0.7",
-    "bcryptjs": "^3.0.3",
-    "jsonwebtoken": "^9.0.3",
     "blueimp-md5": "^2.19.0"
   },
   "devDependencies": {
-    "@types/bcryptjs": "^2.4.6",
-    "@types/jsonwebtoken": "^9.0.10",
     "@types/blueimp-md5": "^2.18.2",
     "@cloudflare/workers-types": "^4.20241218.0",
     "typescript": "^5.5.4"
