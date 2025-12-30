@@ -1,0 +1,66 @@
+{
+  "name": "xa-note",
+  "private": true,
+  "version": "1.0.0",
+  "buildTime": "2025-12-30",
+  "publisher": "XiaoA<i@xiaoa.me>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/awinds/xa-note.git"
+  },
+  "homepage": "https://github.com/awinds/xa-note",
+  "bugs": {
+    "url": "https://github.com/awinds/xa-note/issues"
+  },
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently \"vite\" \"tsx server/index.ts\"",
+    "build": "npm run generate-build-info && vite build && tsc -p server/tsconfig.json",
+    "start": "cross-env NODE_ENV=production node dist-server/index.js",
+    "generate-build-info": "node scripts/generate-build-info.js",
+    "type-check": "tsc --noEmit && tsc -p server/tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@codemirror/view": "^6.39.7",
+    "@fortawesome/fontawesome-svg-core": "^7.1.0",
+    "@fortawesome/free-solid-svg-icons": "^7.1.0",
+    "@fortawesome/react-fontawesome": "^3.1.1",
+    "@hono/node-server": "^1.9.0",
+    "bcryptjs": "^3.0.3",
+    "better-sqlite3": "^9.4.0",
+    "blueimp-md5": "^2.19.0",
+    "cron": "^3.5.0",
+    "hono": "^4.3.1",
+    "jsonwebtoken": "^9.0.3",
+    "marked": "^17.0.1",
+    "md-editor-rt": "^6.3.0",
+    "nanoid": "^5.0.7",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.26.2",
+    "svg-captcha": "^1.4.0",
+    "zustand": "^4.5.4"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/better-sqlite3": "^7.6.8",
+    "@types/blueimp-md5": "^2.18.2",
+    "@types/cron": "^2.4.3",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^20.10.0",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^5.1.2",
+    "autoprefixer": "^10.4.19",
+    "concurrently": "^8.2.2",
+    "cross-env": "^10.1.0",
+    "postcss": "^8.4.41",
+    "tailwindcss": "^3.4.10",
+    "tsx": "^4.19.0",
+    "typescript": "^5.5.4",
+    "vite": "^5.4.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

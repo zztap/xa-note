@@ -1,0 +1,32 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /admin/
+Disallow: /login
+Disallow: /install
+Disallow: /share/
+
+# 允许搜索引擎访问公共分享页面
+Allow: /share/*/view
+
+# 站点地图
+Sitemap: /sitemap.xml
+
+# 爬取延迟
+Crawl-delay: 1
+
+# 特定搜索引擎规则
+User-agent: Googlebot
+Allow: /
+Disallow: /api/
+Crawl-delay: 0
+
+User-agent: Bingbot
+Allow: /
+Disallow: /api/
+Crawl-delay: 1
+
+User-agent: Baiduspider
+Allow: /
+Disallow: /api/
+Crawl-delay: 2

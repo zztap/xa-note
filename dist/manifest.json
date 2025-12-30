@@ -1,0 +1,85 @@
+{
+  "name": "XA Note - 智能笔记管理系统",
+  "short_name": "XA Note",
+  "description": "现代化的智能笔记管理系统，支持Markdown编辑、分类管理、标签系统、全文搜索等功能",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#3b82f6",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "zh-CN",
+  "dir": "ltr",
+  "categories": ["productivity", "utilities", "education"],
+  "icons": [
+    {
+      "src": "/favicon-16x16.png",
+      "sizes": "16x16",
+      "type": "image/png"
+    },
+    {
+      "src": "/favicon-32x32.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    },
+    {
+      "src": "/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable any"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshot-desktop.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "XA Note 桌面版界面"
+    },
+    {
+      "src": "/screenshot-mobile.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "XA Note 移动版界面"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "新建笔记",
+      "short_name": "新建",
+      "description": "快速创建新笔记",
+      "url": "/?action=new",
+      "icons": [
+        {
+          "src": "/shortcut-new.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "搜索笔记",
+      "short_name": "搜索",
+      "description": "搜索现有笔记",
+      "url": "/?action=search",
+      "icons": [
+        {
+          "src": "/shortcut-search.png",
+          "sizes": "96x96"
+        }
+      ]
+    }
+  ]
+}

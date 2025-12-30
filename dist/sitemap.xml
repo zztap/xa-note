@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+    
+    <!-- 主页 -->
+    <url>
+        <loc>/</loc>
+        <lastmod>2024-12-30</lastmod>
+        <changefreq>daily</changefreq>
+        <priority>1.0</priority>
+    </url>
+    
+    <!-- 登录页面 -->
+    <url>
+        <loc>/login</loc>
+        <lastmod>2024-12-30</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.8</priority>
+    </url>
+    
+    <!-- 功能介绍页面 -->
+    <url>
+        <loc>/features</loc>
+        <lastmod>2024-12-30</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.7</priority>
+    </url>
+    
+    <!-- 帮助文档页面 -->
+    <url>
+        <loc>/help</loc>
+        <lastmod>2024-12-30</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.6</priority>
+    </url>
+    
+    <!-- 隐私政策页面 -->
+    <url>
+        <loc>/privacy</loc>
+        <lastmod>2024-12-30</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.5</priority>
+    </url>
+
+    <!-- 版权信息页面 -->
+    <url>
+        <loc>/copyright</loc>
+        <lastmod>2024-12-30</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.5</priority>
+    </url>
+    
+</urlset>
