@@ -1049,4 +1049,269 @@ app.post('/api/share/:code/view', async (c) => {
   return c.json(note)
 })
 
+
+// Captcha API
+app.get('/api/captcha', (c) => {
+  // Simple SVG captcha implementation for Cloudflare Pages
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+  let captchaText = ''
+  for (let i = 0; i < 4; i++) {
+    captchaText += chars.charAt(Math.floor(Math.random() * chars.length))
+  }
+
+  const svg = `<svg width="120" height="40" xmlns="http://www.w3.org/2000/svg">
+    <rect width="120" height="40" fill="#f4f4f5"/>
+    <text x="60" y="25" font-family="Arial" font-size="18" text-anchor="middle" fill="#333">${captchaText}</text>
+    <line x1="10" y1="15" x2="110" y2="25" stroke="#ccc" stroke-width="1"/>
+    <line x1="20" y1="30" x2="100" y2="10" stroke="#ccc" stroke-width="1"/>
+  </svg>`
+
+  // Save to cookie (5 minutes)
+  setCookie(c, 'captcha', captchaText.toLowerCase(), {
+    httpOnly: true,
+    maxAge: 300,
+    path: '/'
+  })
+
+  return c.json({ svg })
+})
+
+// Settings PUT method
+app.put('/api/settings', requireAuth, async (c) => {
+  const db = c.get('db') as any
+  const updates = await c.req.json()
+
+  for (const [key, value] of Object.entries(updates)) {
+    if (key === 'admin.password') {
+      const hash = await hashPassword(String(value))
+      await db.prepare('INSERT OR REPLACE INTO settings (key, value, updated_at) VALUES (?, ?, ?)').run('admin.password_hash', hash, Date.now())
+      continue
+    }
+
+    await db.prepare('INSERT OR REPLACE INTO settings (key, value, updated_at) VALUES (?, ?, ?)').run(key, String(value), Date.now())
+  }
+
+  return c.json({ ok: true })
+})
+
+// GitHub OAuth debug endpoint
+app.get('/api/auth/github/debug', requireInstallation, async (c) => {
+  const db = c.get('db') as any
+  
+  const enableGithub = await db.prepare('SELECT value FROM settings WHERE key = ?').get('login.enable_github') as any
+  const clientId = await db.prepare('SELECT value FROM settings WHERE key = ?').get('github.client_id') as any
+  const clientSecret = await db.prepare('SELECT value FROM settings WHERE key = ?').get('github.client_secret') as any
+  const { apiUrl, frontendUrl } = getBaseUrl(c)
+  const redirectUri = `${apiUrl}/api/auth/github/callback`
+  
+  return c.json({
+    enabled: enableGithub?.value === '1',
+    hasClientId: !!clientId?.value,
+    hasClientSecret: !!clientSecret?.value,
+    clientIdPreview: clientId?.value ? clientId.value.substring(0, 8) + '...' : 'not set',
+    redirectUri,
+    apiUrl,
+    frontendUrl,
+    environment: 'cloudflare-pages'
+  })
+})
+
+// Auth cleanup endpoint
+app.post('/api/auth/cleanup', (c) => {
+  // Clear all possible auth cookies
+  deleteCookie(c, 'auth_token', { path: '/' })
+  deleteCookie(c, 'session_id', { path: '/' })
+  deleteCookie(c, 'session', { path: '/' })
+  return c.json({ ok: true, message: 'Tokens cleared' })
+})
+
+// Trash management APIs
+app.get('/api/trash', requireAuth, async (c) => {
+  const db = c.get('db') as any
+  const rows = await db.prepare('SELECT * FROM trash ORDER BY deleted_at DESC').all()
+  return c.json(rows)
+})
+
+app.post('/api/trash/:id/restore', requireAuth, async (c) => {
+  const db = c.get('db') as any
+  const id = c.req.param('id')
+  if (!id) return c.json({ error: 'BAD_REQUEST' }, 400)
+
+  // Get note from trash
+  const trashNote = await db.prepare('SELECT * FROM trash WHERE id=?').get(id) as any
+  if (!trashNote) return c.json({ error: 'NOT_FOUND' }, 404)
+
+  // Restore to notes table
+  await db.prepare(`
+    INSERT INTO notes (id, title, content, tags, category_id, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    trashNote.id,
+    trashNote.title,
+    trashNote.content,
+    trashNote.tags,
+    trashNote.category_id,
+    trashNote.created_at,
+    Date.now() // Update modification time
+  )
+
+  // Remove from trash
+  await db.prepare('DELETE FROM trash WHERE id=?').run(id)
+  
+  return c.json({ ok: true })
+})
+
+app.delete('/api/trash/:id', requireAuth, async (c) => {
+  const db = c.get('db') as any
+  const id = c.req.param('id')
+  if (!id) return c.json({ error: 'BAD_REQUEST' }, 400)
+
+  // Permanently delete
+  await db.prepare('DELETE FROM trash WHERE id=?').run(id)
+
+  return c.json({ ok: true })
+})
+
+app.delete('/api/trash', requireAuth, async (c) => {
+  const db = c.get('db') as any
+  // Empty trash
+  await db.prepare('DELETE FROM trash').run()
+  return c.json({ ok: true })
+})
+
+// SEO routes
+app.get('/sitemap.xml', (c) => {
+  // Get current request domain and protocol
+  const host = c.req.header('host') || 'localhost:9915'
+  const protocol = c.req.header('x-forwarded-proto') || 
+                   c.req.header('cf-visitor') ? 'https' : 
+                   (host.includes('localhost') ? 'http' : 'https')
+  const baseUrl = `${protocol}://${host}`
+  
+  // Get current date
+  const currentDate = new Date().toISOString().split('T')[0]
+  
+  const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+    
+    <!-- Homepage -->
+    <url>
+        <loc>${baseUrl}/</loc>
+        <lastmod>${currentDate}</lastmod>
+        <changefreq>daily</changefreq>
+        <priority>1.0</priority>
+        <xhtml:link rel="alternate" hreflang="zh-CN" href="${baseUrl}/" />
+        <xhtml:link rel="alternate" hreflang="en" href="${baseUrl}/?lang=en" />
+    </url>
+    
+    <!-- Login page -->
+    <url>
+        <loc>${baseUrl}/login</loc>
+        <lastmod>${currentDate}</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.8</priority>
+        <xhtml:link rel="alternate" hreflang="zh-CN" href="${baseUrl}/login" />
+        <xhtml:link rel="alternate" hreflang="en" href="${baseUrl}/login?lang=en" />
+    </url>
+    
+    <!-- Features page -->
+    <url>
+        <loc>${baseUrl}/features</loc>
+        <lastmod>${currentDate}</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.7</priority>
+        <xhtml:link rel="alternate" hreflang="zh-CN" href="${baseUrl}/features" />
+        <xhtml:link rel="alternate" hreflang="en" href="${baseUrl}/features?lang=en" />
+    </url>
+    
+    <!-- Help page -->
+    <url>
+        <loc>${baseUrl}/help</loc>
+        <lastmod>${currentDate}</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.6</priority>
+        <xhtml:link rel="alternate" hreflang="zh-CN" href="${baseUrl}/help" />
+        <xhtml:link rel="alternate" hreflang="en" href="${baseUrl}/help?lang=en" />
+    </url>
+    
+    <!-- Privacy page -->
+    <url>
+        <loc>${baseUrl}/privacy</loc>
+        <lastmod>${currentDate}</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.5</priority>
+        <xhtml:link rel="alternate" hreflang="zh-CN" href="${baseUrl}/privacy" />
+        <xhtml:link rel="alternate" hreflang="en" href="${baseUrl}/privacy?lang=en" />
+    </url>
+
+    <!-- Copyright page -->
+    <url>
+        <loc>${baseUrl}/copyright</loc>
+        <lastmod>${currentDate}</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.5</priority>
+        <xhtml:link rel="alternate" hreflang="zh-CN" href="${baseUrl}/copyright" />
+        <xhtml:link rel="alternate" hreflang="en" href="${baseUrl}/copyright?lang=en" />
+    </url>
+    
+</urlset>`
+
+  return new Response(sitemap, {
+    headers: {
+      'Content-Type': 'application/xml',
+      'Cache-Control': 'public, max-age=3600' // Cache for 1 hour
+    }
+  })
+})
+
+app.get('/robots.txt', (c) => {
+  // Get current request domain and protocol
+  const host = c.req.header('host') || 'localhost:9915'
+  const protocol = c.req.header('x-forwarded-proto') || 
+                   c.req.header('cf-visitor') ? 'https' : 
+                   (host.includes('localhost') ? 'http' : 'https')
+  const baseUrl = `${protocol}://${host}`
+  
+  const robots = `User-agent: *
+Allow: /
+
+# Static resources
+Allow: /assets/
+Allow: /favicon.png
+Allow: /logo.png
+Allow: /manifest.json
+
+# Disallowed paths
+Disallow: /api/
+Disallow: /admin/
+Disallow: /data/
+
+# Sitemap
+Sitemap: ${baseUrl}/sitemap.xml`
+
+  return new Response(robots, {
+    headers: {
+      'Content-Type': 'text/plain',
+      'Cache-Control': 'public, max-age=86400' // Cache for 24 hours
+    }
+  })
+})
+
+// Debug environment endpoint
+app.get('/api/debug/env', (c) => {
+  const db = c.get('db')
+  return c.json({
+    hasDB: !!db,
+    dbType: 'D1',
+    platform: 'cloudflare-pages',
+    timestamp: new Date().toISOString(),
+    env: {
+      hasDB: !!c.env.DB,
+      hasJWTSecret: !!c.env.JWT_SECRET
+    }
+  })
+})
+
+
 export default app
