@@ -144,6 +144,7 @@ type Bindings = {
 
 type Variables = {
   db: any
+  user?: any
 }
 
 const app = new Hono<{ Bindings: Bindings; Variables: Variables }>()
@@ -340,6 +341,127 @@ app.get('/api/install/status', async (c) => {
   }
 })
 
+// 日志记录辅助函数
+async function logAction(db: any, params: {
+  user_id: string
+  action: string
+  target_type?: string
+  target_id?: string
+  details?: any
+  ip_address?: string
+  user_agent?: string
+}): Promise<void> {
+  try {
+    const id = nanoid()
+    const created_at = Date.now()
+    
+    await db.prepare(`
+      INSERT INTO logs (id, user_id, action, target_type, target_id, details, ip_address, user_agent, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      id,
+      params.user_id,
+      params.action,
+      params.target_type || null,
+      params.target_id || null,
+      params.details ? JSON.stringify(params.details) : null,
+      params.ip_address || null,
+      params.user_agent || null,
+      created_at
+    )
+  } catch (error) {
+    console.error('Failed to log action:', error)
+  }
+}
+
+// 获取日志列表
+app.get('/api/logs', requireAuth, async (c) => {
+  const db = c.get('db') as any
+  
+  try {
+    const page = parseInt(c.req.query('page') || '1')
+    const limit = parseInt(c.req.query('limit') || '50')
+    const action = c.req.query('action')
+    const targetType = c.req.query('target_type')
+    const startDate = c.req.query('start_date')
+    const endDate = c.req.query('end_date')
+    
+    const offset = (page - 1) * limit
+    
+    let whereClause = 'WHERE 1=1'
+    const queryParams: any[] = []
+    
+    if (action) {
+      whereClause += ' AND action = ?'
+      queryParams.push(action)
+    }
+    
+    if (targetType) {
+      whereClause += ' AND target_type = ?'
+      queryParams.push(targetType)
+    }
+    
+    if (startDate) {
+      whereClause += ' AND created_at >= ?'
+      queryParams.push(parseInt(startDate))
+    }
+    
+    if (endDate) {
+      whereClause += ' AND created_at <= ?'
+      queryParams.push(parseInt(endDate))
+    }
+    
+    // 获取总数
+    const totalResult = await db.prepare(`SELECT COUNT(*) as count FROM logs ${whereClause}`).get(...queryParams) as any
+    const total = totalResult?.count || 0
+    
+    // 获取日志列表
+    const logs = await db.prepare(`
+      SELECT * FROM logs ${whereClause} 
+      ORDER BY created_at DESC 
+      LIMIT ? OFFSET ?
+    `).all(...queryParams, limit, offset)
+    
+    // 解析details字段
+    const parsedLogs = logs.map((log: any) => ({
+      ...log,
+      details: log.details ? JSON.parse(log.details) : null
+    }))
+    
+    return c.json({
+      logs: parsedLogs,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit)
+    })
+  } catch (error) {
+    console.error('Error fetching logs:', error)
+    return c.json({ error: 'Failed to fetch logs' }, 500)
+  }
+})
+
+// 清理旧日志
+app.delete('/api/logs/cleanup', requireAuth, async (c) => {
+  const db = c.get('db') as any
+  
+  try {
+    const { days = 90 } = await c.req.json()
+    const cutoffTime = Date.now() - (days * 24 * 60 * 60 * 1000)
+    
+    const result = await db.prepare('DELETE FROM logs WHERE created_at < ?').run(cutoffTime)
+    
+    return c.json({ 
+      ok: true, 
+      deletedCount: result.changes || 0,
+      message: `Deleted logs older than ${days} days`
+    })
+  } catch (error) {
+    console.error('Error cleaning up logs:', error)
+    return c.json({ error: 'Failed to cleanup logs' }, 500)
+  }
+})
+
 // 安装接口
 app.post('/api/install', preventReinstall, async (c) => {
   const db = c.get('db') as any
@@ -501,10 +623,47 @@ app.post('/api/login', requireInstallation, async (c) => {
   const db = c.get('db') as any
   
   try {
-    const { email, password } = await c.req.json()
+    const { email, password, captcha, turnstileToken } = await c.req.json()
 
     if (!email || !password) {
       return c.json({ ok: false, reason: 'missing_credentials' }, 400)
+    }
+
+    // 获取验证设置
+    const enableCaptcha = await db.prepare('SELECT value FROM settings WHERE key = ?').get('login.enable_captcha') as any
+    const enableTurnstile = await db.prepare('SELECT value FROM settings WHERE key = ?').get('login.enable_turnstile') as any
+    const turnstileSecretKey = await db.prepare('SELECT value FROM settings WHERE key = ?').get('login.turnstile_secret_key') as any
+
+    // 验证码验证
+    if (enableCaptcha?.value === '1') {
+      const savedCaptcha = getCookie(c, 'captcha')
+      if (!captcha || !savedCaptcha || captcha.toLowerCase() !== savedCaptcha.toLowerCase()) {
+        return c.json({ ok: false, error: 'captcha_invalid' }, 400)
+      }
+      // 清除验证码cookie
+      deleteCookie(c, 'captcha', { path: '/' })
+    }
+
+    // Turnstile验证
+    if (enableTurnstile?.value === '1' && turnstileSecretKey?.value) {
+      if (!turnstileToken) {
+        return c.json({ ok: false, error: 'turnstile_required' }, 400)
+      }
+
+      const turnstileResponse = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          secret: turnstileSecretKey.value,
+          response: turnstileToken,
+          remoteip: c.req.header('cf-connecting-ip') || c.req.header('x-forwarded-for') || 'unknown'
+        })
+      })
+
+      const turnstileResult = await turnstileResponse.json()
+      if (!turnstileResult.success) {
+        return c.json({ ok: false, error: 'turnstile_failed' }, 400)
+      }
     }
 
     // 获取管理员信息
@@ -517,12 +676,30 @@ app.post('/api/login', requireInstallation, async (c) => {
 
     // 验证邮箱
     if (email !== adminEmail.value) {
+      // 记录失败的登录尝试
+      await logAction(db, {
+        user_id: 'unknown',
+        action: 'login',
+        target_type: 'user',
+        details: { success: false, reason: 'email_incorrect', email },
+        ip_address: c.req.header('cf-connecting-ip') || c.req.header('x-forwarded-for') || 'unknown',
+        user_agent: c.req.header('user-agent') || 'unknown'
+      })
       return c.json({ ok: false, error: 'email_incorrect' }, 401)
     }
 
     // 验证密码
     const isValidPassword = await comparePassword(password, adminPasswordHash.value)
     if (!isValidPassword) {
+      // 记录失败的登录尝试
+      await logAction(db, {
+        user_id: adminEmail.value,
+        action: 'login',
+        target_type: 'user',
+        details: { success: false, reason: 'invalid_password' },
+        ip_address: c.req.header('cf-connecting-ip') || c.req.header('x-forwarded-for') || 'unknown',
+        user_agent: c.req.header('user-agent') || 'unknown'
+      })
       return c.json({ ok: false, error: 'invalid_credentials' }, 401)
     }
 
@@ -550,6 +727,16 @@ app.post('/api/login', requireInstallation, async (c) => {
       path: '/',
       maxAge: 60 * 60 * 24 * 7, // 7天
       domain: undefined
+    })
+
+    // 记录成功的登录
+    await logAction(db, {
+      user_id: adminEmail.value,
+      action: 'login',
+      target_type: 'user',
+      details: { success: true, method: 'password' },
+      ip_address: c.req.header('cf-connecting-ip') || c.req.header('x-forwarded-for') || 'unknown',
+      user_agent: c.req.header('user-agent') || 'unknown'
     })
 
     return c.json({ ok: true, email: adminEmail.value })
@@ -699,6 +886,16 @@ app.get('/api/auth/github/callback', async (c) => {
     setCookie(c, 'auth_token', token, cookieOptions)
     setCookie(c, 'session_id', sessionId, cookieOptions)
 
+    // 记录成功的GitHub登录
+    await logAction(db, {
+      user_id: adminEmailRow.value,
+      action: 'login',
+      target_type: 'user',
+      details: { success: true, method: 'github', github_user: userData.login },
+      ip_address: c.req.header('cf-connecting-ip') || c.req.header('x-forwarded-for') || 'unknown',
+      user_agent: c.req.header('user-agent') || 'unknown'
+    })
+
     // 重定向回前端
     return c.redirect(`${frontendUrl}/`)
 
@@ -731,7 +928,30 @@ app.get('/api/me', requireInstallation, async (c) => {
 })
 
 // 退出登录
-app.post('/api/logout', (c) => {
+app.post('/api/logout', async (c) => {
+  const db = c.get('db') as any
+  
+  // 获取当前用户信息用于日志记录
+  const token = getCookie(c, 'auth_token')
+  let userId = 'unknown'
+  
+  if (token) {
+    const payload = await verifyToken(token)
+    if (payload) {
+      userId = payload.email || payload.userId || 'admin'
+    }
+  }
+  
+  // 记录登出操作
+  await logAction(db, {
+    user_id: userId,
+    action: 'logout',
+    target_type: 'user',
+    details: { success: true },
+    ip_address: c.req.header('cf-connecting-ip') || c.req.header('x-forwarded-for') || 'unknown',
+    user_agent: c.req.header('user-agent') || 'unknown'
+  })
+  
   deleteCookie(c, 'auth_token', { path: '/' })
   deleteCookie(c, 'session_id', { path: '/' })
   return c.json({ ok: true })
@@ -846,7 +1066,10 @@ app.get('/api/settings', requireAuth, async (c) => {
 // 更新设置（需要认证）
 app.put('/api/settings', requireAuth, async (c) => {
   const db = c.get('db') as any
+  const user = c.get('user')
   const updates = await c.req.json()
+
+  const updatedKeys = Object.keys(updates)
 
   for (const [key, value] of Object.entries(updates)) {
     if (key === 'admin.password') {
@@ -857,6 +1080,16 @@ app.put('/api/settings', requireAuth, async (c) => {
 
     await db.prepare('INSERT OR REPLACE INTO settings (key, value, updated_at) VALUES (?, ?, ?)').run(key, String(value), Date.now())
   }
+
+  // 记录设置更新
+  await logAction(db, {
+    user_id: user.email || user.userId,
+    action: 'update_settings',
+    target_type: 'settings',
+    details: { updated_keys: updatedKeys },
+    ip_address: c.req.header('cf-connecting-ip') || c.req.header('x-forwarded-for') || 'unknown',
+    user_agent: c.req.header('user-agent') || 'unknown'
+  })
 
   return c.json({ ok: true })
 })
@@ -864,7 +1097,10 @@ app.put('/api/settings', requireAuth, async (c) => {
 // 更新设置（POST方法，与PUT相同）
 app.post('/api/settings', requireAuth, async (c) => {
   const db = c.get('db') as any
+  const user = c.get('user')
   const updates = await c.req.json()
+
+  const updatedKeys = Object.keys(updates)
 
   for (const [key, value] of Object.entries(updates)) {
     if (key === 'admin.password') {
@@ -875,6 +1111,16 @@ app.post('/api/settings', requireAuth, async (c) => {
 
     await db.prepare('INSERT OR REPLACE INTO settings (key, value, updated_at) VALUES (?, ?, ?)').run(key, String(value), Date.now())
   }
+
+  // 记录设置更新
+  await logAction(db, {
+    user_id: user.email || user.userId,
+    action: 'update_settings',
+    target_type: 'settings',
+    details: { updated_keys: updatedKeys },
+    ip_address: c.req.header('cf-connecting-ip') || c.req.header('x-forwarded-for') || 'unknown',
+    user_agent: c.req.header('user-agent') || 'unknown'
+  })
 
   return c.json({ ok: true })
 })
@@ -888,39 +1134,83 @@ app.get('/api/categories', async (c) => {
 
 app.post('/api/categories', requireAuth, async (c) => {
   const db = c.get('db') as any
+  const user = c.get('user')
   const { name } = await c.req.json()
   if (!name) return c.json({ error: 'BAD_REQUEST' }, 400)
 
   const id = nanoid()
   await db.prepare('INSERT INTO categories (id, name, created_at) VALUES (?, ?, ?)').run(id, name, Date.now())
 
+  // 记录分类创建
+  await logAction(db, {
+    user_id: user.email || user.userId,
+    action: 'create_category',
+    target_type: 'category',
+    target_id: id,
+    details: { name },
+    ip_address: c.req.header('cf-connecting-ip') || c.req.header('x-forwarded-for') || 'unknown',
+    user_agent: c.req.header('user-agent') || 'unknown'
+  })
+
   return c.json({ ok: true, id })
 })
 
 app.put('/api/categories/:id', requireAuth, async (c) => {
   const db = c.get('db') as any
+  const user = c.get('user')
   const id = c.req.param('id')
   const { name } = await c.req.json()
   
   if (!id || !name) return c.json({ error: 'BAD_REQUEST' }, 400)
   if (id === 'default') return c.json({ error: 'CANNOT_EDIT_DEFAULT' }, 400)
 
+  // 获取旧名称用于日志
+  const oldCategory = await db.prepare('SELECT * FROM categories WHERE id=?').get(id) as any
+
   await db.prepare('UPDATE categories SET name = ? WHERE id = ?').run(name, id)
+
+  // 记录分类更新
+  await logAction(db, {
+    user_id: user.email || user.userId,
+    action: 'update_category',
+    target_type: 'category',
+    target_id: id,
+    details: { old_name: oldCategory?.name, new_name: name },
+    ip_address: c.req.header('cf-connecting-ip') || c.req.header('x-forwarded-for') || 'unknown',
+    user_agent: c.req.header('user-agent') || 'unknown'
+  })
 
   return c.json({ ok: true })
 })
 
 app.delete('/api/categories/:id', requireAuth, async (c) => {
   const db = c.get('db') as any
+  const user = c.get('user')
   const id = c.req.param('id')
   if (!id) return c.json({ error: 'BAD_REQUEST' }, 400)
   if (id === 'default') return c.json({ error: 'CANNOT_DELETE_DEFAULT' }, 400)
+
+  // 获取分类信息用于日志
+  const category = await db.prepare('SELECT * FROM categories WHERE id=?').get(id) as any
 
   // 将该分类下的笔记转移到默认分类
   await db.prepare('UPDATE notes SET category_id = ? WHERE category_id = ?').run('default', id)
 
   // 删除分类
   await db.prepare('DELETE FROM categories WHERE id = ?').run(id)
+
+  // 记录分类删除
+  if (category) {
+    await logAction(db, {
+      user_id: user.email || user.userId,
+      action: 'delete_category',
+      target_type: 'category',
+      target_id: id,
+      details: { name: category.name },
+      ip_address: c.req.header('cf-connecting-ip') || c.req.header('x-forwarded-for') || 'unknown',
+      user_agent: c.req.header('user-agent') || 'unknown'
+    })
+  }
 
   return c.json({ ok: true })
 })
@@ -937,8 +1227,9 @@ app.get('/api/notes', async (c) => {
   return c.json(rows)
 })
 
-app.post('/api/notes', async (c) => {
+app.post('/api/notes', requireAuth, async (c) => {
   const db = c.get('db') as any
+  const user = c.get('user')
   const { categoryId } = await c.req.json()
 
   const noteId = nanoid()
@@ -953,11 +1244,23 @@ app.post('/api/notes', async (c) => {
     Date.now()
   )
 
+  // 记录笔记创建
+  await logAction(db, {
+    user_id: user.email || user.userId,
+    action: 'create_note',
+    target_type: 'note',
+    target_id: noteId,
+    details: { category_id: categoryId ?? 'default' },
+    ip_address: c.req.header('cf-connecting-ip') || c.req.header('x-forwarded-for') || 'unknown',
+    user_agent: c.req.header('user-agent') || 'unknown'
+  })
+
   return c.json({ ok: true })
 })
 
-app.put('/api/notes/:id', async (c) => {
+app.put('/api/notes/:id', requireAuth, async (c) => {
   const db = c.get('db') as any
+  const user = c.get('user')
   const id = c.req.param('id')
   if (!id) return c.json({ error: 'BAD_REQUEST' }, 400)
 
@@ -981,11 +1284,27 @@ app.put('/api/notes/:id', async (c) => {
     id
   )
 
+  // 记录笔记更新
+  await logAction(db, {
+    user_id: user.email || user.userId,
+    action: 'update_note',
+    target_type: 'note',
+    target_id: id,
+    details: { 
+      title: note.title,
+      category_id: note.category_id,
+      tags_count: note.tags?.length || 0
+    },
+    ip_address: c.req.header('cf-connecting-ip') || c.req.header('x-forwarded-for') || 'unknown',
+    user_agent: c.req.header('user-agent') || 'unknown'
+  })
+
   return c.json({ ok: true })
 })
 
 app.delete('/api/notes/:id', requireAuth, async (c) => {
   const db = c.get('db') as any
+  const user = c.get('user')
   const id = c.req.param('id')
   if (!id) return c.json({ error: 'BAD_REQUEST' }, 400)
 
@@ -1011,6 +1330,17 @@ app.delete('/api/notes/:id', requireAuth, async (c) => {
   // 从笔记表中删除
   await db.prepare('DELETE FROM notes WHERE id=?').run(id)
   
+  // 记录笔记删除
+  await logAction(db, {
+    user_id: user.email || user.userId,
+    action: 'delete_note',
+    target_type: 'note',
+    target_id: id,
+    details: { title: note.title, category_id: note.category_id },
+    ip_address: c.req.header('cf-connecting-ip') || c.req.header('x-forwarded-for') || 'unknown',
+    user_agent: c.req.header('user-agent') || 'unknown'
+  })
+  
   return c.json({ ok: true })
 })
 
@@ -1034,6 +1364,7 @@ app.get('/api/search', async (c) => {
 // Share
 app.post('/api/share/:id', requireAuth, async (c) => {
   const db = c.get('db') as any
+  const user = c.get('user')
   const id = c.req.param('id')
   if (!id) return c.json({ error: 'BAD_REQUEST' }, 400)
 
@@ -1055,6 +1386,21 @@ app.post('/api/share/:id', requireAuth, async (c) => {
     Date.now()
   )
 
+  // 记录分享创建
+  await logAction(db, {
+    user_id: user.email || user.userId,
+    action: 'create_share',
+    target_type: 'share',
+    target_id: code,
+    details: { 
+      note_id: id,
+      has_password: !!body.password,
+      expires_at: body.expiresAt
+    },
+    ip_address: c.req.header('cf-connecting-ip') || c.req.header('x-forwarded-for') || 'unknown',
+    user_agent: c.req.header('user-agent') || 'unknown'
+  })
+
   return c.json({ code })
 })
 
@@ -1070,10 +1416,27 @@ app.get('/api/shares', requireAuth, async (c) => {
 
 app.delete('/api/shares/:id', requireAuth, async (c) => {
   const db = c.get('db') as any
+  const user = c.get('user')
   const id = c.req.param('id')
   if (!id) return c.json({ error: 'BAD_REQUEST' }, 400)
 
+  // 获取分享信息用于日志
+  const share = await db.prepare('SELECT * FROM shares WHERE id=?').get(id) as any
+
   await db.prepare('DELETE FROM shares WHERE id=?').run(id)
+
+  // 记录分享删除
+  if (share) {
+    await logAction(db, {
+      user_id: user.email || user.userId,
+      action: 'delete_share',
+      target_type: 'share',
+      target_id: id,
+      details: { note_id: share.note_id },
+      ip_address: c.req.header('cf-connecting-ip') || c.req.header('x-forwarded-for') || 'unknown',
+      user_agent: c.req.header('user-agent') || 'unknown'
+    })
+  }
 
   return c.json({ ok: true })
 })
@@ -1100,6 +1463,17 @@ app.post('/api/share/:code/view', async (c) => {
   }
 
   const note = await db.prepare('SELECT * FROM notes WHERE id=?').get(share.note_id) as any
+
+  // 记录分享查看（匿名用户）
+  await logAction(db, {
+    user_id: 'anonymous',
+    action: 'view_share',
+    target_type: 'share',
+    target_id: code,
+    details: { note_id: share.note_id },
+    ip_address: c.req.header('cf-connecting-ip') || c.req.header('x-forwarded-for') || 'unknown',
+    user_agent: c.req.header('user-agent') || 'unknown'
+  })
 
   return c.json(note)
 })
@@ -1170,6 +1544,7 @@ app.get('/api/trash', requireAuth, async (c) => {
 
 app.post('/api/trash/:id/restore', requireAuth, async (c) => {
   const db = c.get('db') as any
+  const user = c.get('user')
   const id = c.req.param('id')
   if (!id) return c.json({ error: 'BAD_REQUEST' }, 400)
 
@@ -1194,16 +1569,44 @@ app.post('/api/trash/:id/restore', requireAuth, async (c) => {
   // Remove from trash
   await db.prepare('DELETE FROM trash WHERE id=?').run(id)
   
+  // 记录笔记恢复
+  await logAction(db, {
+    user_id: user.email || user.userId,
+    action: 'restore_note',
+    target_type: 'note',
+    target_id: id,
+    details: { title: trashNote.title, category_id: trashNote.category_id },
+    ip_address: c.req.header('cf-connecting-ip') || c.req.header('x-forwarded-for') || 'unknown',
+    user_agent: c.req.header('user-agent') || 'unknown'
+  })
+  
   return c.json({ ok: true })
 })
 
 app.delete('/api/trash/:id', requireAuth, async (c) => {
   const db = c.get('db') as any
+  const user = c.get('user')
   const id = c.req.param('id')
   if (!id) return c.json({ error: 'BAD_REQUEST' }, 400)
 
+  // 获取笔记信息用于日志
+  const trashNote = await db.prepare('SELECT * FROM trash WHERE id=?').get(id) as any
+
   // Permanently delete
   await db.prepare('DELETE FROM trash WHERE id=?').run(id)
+
+  // 记录永久删除
+  if (trashNote) {
+    await logAction(db, {
+      user_id: user.email || user.userId,
+      action: 'permanent_delete_note',
+      target_type: 'note',
+      target_id: id,
+      details: { title: trashNote.title, category_id: trashNote.category_id },
+      ip_address: c.req.header('cf-connecting-ip') || c.req.header('x-forwarded-for') || 'unknown',
+      user_agent: c.req.header('user-agent') || 'unknown'
+    })
+  }
 
   return c.json({ ok: true })
 })
