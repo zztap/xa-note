@@ -90,6 +90,7 @@ wrangler d1 execute xa-note-db --file=d1-init.sql
 5. Add **D1 Database Binding**:
    - **Variable name**: `DB`
    - **D1 Database**: `xa-note-db`
+6. go to **Deployment** > **All deployments**, the latest deployment .. ` retry deployment ` (after binding the d1 database, it must be redeployed)）
 
 #### Step 6: Post-Deployment Setup
 1. **Visit your site**: `https://your-project.pages.dev` or your custom domain
