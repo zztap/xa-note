@@ -87,6 +87,15 @@ div>div>div.cursor-pointer:hover {
 }
 
 /* --- Buttons --- */
+.bg-blue-500,
+.bg-red-500,
+.delete-btn,
+button {
+    pointer-events: auto !important;
+    cursor: pointer !important;
+    z-index: 10 !important;
+}
+
 .bg-blue-500 {
     background: var(--primary-gradient) !important;
     border: none !important;
@@ -100,9 +109,33 @@ div>div>div.cursor-pointer:hover {
     box-shadow: 0 6px 20px rgba(99, 102, 241, 0.23) !important;
 }
 
+.bg-blue-500:active {
+    transform: scale(0.95) !important;
+    filter: brightness(0.8) !important;
+}
+
 .bg-blue-600 {
     background: var(--primary-gradient) !important;
     filter: brightness(0.9) !important;
+}
+
+/* Delete Button Specifics - Using more robust selector */
+button.text-red-500,
+.delete-btn,
+[class*="delete"] {
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+.delete-btn:hover,
+button.text-red-500:hover {
+    color: #ef4444 !important;
+    transform: scale(1.2) !important;
+}
+
+.delete-btn:active,
+button.text-red-500:active {
+    transform: scale(0.9) !important;
 }
 
 /* --- Editor & Content --- */
