@@ -131,12 +131,27 @@ button.text-red-500,
 }
 
 /* Show delete button when hovering over the note card */
-.note-list-item:hover button.text-red-500,
+.note-item:hover button.text-red-500,
+.note-item:hover .delete-btn,
+.note-item:hover [class*="delete"],
 .note-list-item:hover .delete-btn,
-.note-list-item:hover [class*="delete"],
-div>div>div.cursor-pointer:hover button.text-red-500,
 div>div>div.cursor-pointer:hover .delete-btn {
     opacity: 1 !important;
+}
+
+/* Tag Bar (Editor Tags) - Hover Reveal */
+.bg-green-100 .text-green-600,
+/* Possible selector for tag 'x' */
+span.inline-flex button,
+.tag-item button {
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+span.inline-flex:hover button,
+.tag-item:hover button,
+.bg-green-100:hover .text-green-600 {
+    opacity: 1;
 }
 
 .delete-btn:hover,
