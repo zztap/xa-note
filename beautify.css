@@ -90,36 +90,15 @@ div>div>div.cursor-pointer:hover {
 .bg-blue-500,
 .bg-red-500,
 .delete-btn,
-button {
+button,
+[role="button"] {
     pointer-events: auto !important;
     cursor: pointer !important;
-    z-index: 10 !important;
+    z-index: 100 !important;
+    /* High enough to stay on top */
 }
 
-.bg-blue-500 {
-    background: var(--primary-gradient) !important;
-    border: none !important;
-    box-shadow: 0 4px 14px 0 rgba(99, 102, 241, 0.39) !important;
-    transition: all 0.2s ease !important;
-}
-
-.bg-blue-500:hover {
-    filter: brightness(1.1) !important;
-    transform: translateY(-1px) !important;
-    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.23) !important;
-}
-
-.bg-blue-500:active {
-    transform: scale(0.95) !important;
-    filter: brightness(0.8) !important;
-}
-
-.bg-blue-600 {
-    background: var(--primary-gradient) !important;
-    filter: brightness(0.9) !important;
-}
-
-/* Delete Button Specifics - Using more robust selector */
+/* Delete Button Specifics - Expand Hit Area */
 button.text-red-500,
 .delete-btn,
 [class*="delete"] {
@@ -127,15 +106,36 @@ button.text-red-500,
     visibility: visible !important;
     pointer-events: auto !important;
     cursor: pointer !important;
+    padding: 12px !important;
+    /* Make it easier to click */
+    margin: -10px !important;
+    /* Compensate for padding to keep icon centered */
     transition: opacity 0.2s ease, transform 0.2s ease !important;
+    background: transparent !important;
+    border-radius: 50% !important;
 }
 
-/* Show delete button when hovering over the note card */
+/* Show delete button when hovering over the note card OR the button itself */
 .note-item:hover button.text-red-500,
 .note-item:hover .delete-btn,
 .note-item:hover [class*="delete"],
 .note-list-item:hover .delete-btn,
-div>div>div.cursor-pointer:hover .delete-btn {
+div>div>div.cursor-pointer:hover .delete-btn,
+.delete-btn:hover {
+    opacity: 1 !important;
+}
+
+/* Tag Bar (Editor Tags) - Hover Reveal */
+.bg-green-100 button,
+[class*="tag"] button,
+.inline-flex.bg-green-100 button {
+    opacity: 0 !important;
+    pointer-events: auto !important;
+}
+
+.bg-green-100:hover button,
+[class*="tag"]:hover button,
+.inline-flex.bg-green-100:hover button {
     opacity: 1 !important;
 }
 
