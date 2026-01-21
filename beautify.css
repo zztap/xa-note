@@ -180,8 +180,14 @@ button.text-red-500:active {
     border: 1px solid rgba(0, 0, 0, 0.05) !important;
     margin: 1.5rem 0 !important;
     background-color: #f8fafc !important;
-    overflow: hidden !important;
-    width: 100% !important;
+    overflow-x: auto !important;
+    /* Allow horizontal scroll for long code */
+    width: fit-content !important;
+    /* Adaptive width */
+    max-width: 100% !important;
+    /* Don't overflow the document */
+    min-width: 200px !important;
+    /* Avoid being too narrow for window controls */
 }
 
 .dark .md-editor-code {
