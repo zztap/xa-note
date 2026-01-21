@@ -1,6 +1,6 @@
-/* XA Note Beautification Overrides */
+/* XA Note 最终美化版样式表 */
 
-/* --- Typography & Global --- */
+/* --- 字体与全局 --- */
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
 
 :root {
@@ -17,80 +17,44 @@ body {
     background-color: #f8fafc;
 }
 
-/* --- Dark Mode Variables --- */
+/* --- 深色模式变量 --- */
 .dark {
     --sidebar-bg-glass: rgba(30, 41, 59, 0.7);
     --item-hover-bg: rgba(168, 85, 247, 0.15);
 }
 
-/* --- Sidebar Glassmorphism --- */
-aside,
-.w-64 {
+/* --- 侧边栏磨砂玻璃效果 --- */
+aside, .w-64 {
     background-color: var(--sidebar-bg-glass) !important;
     backdrop-filter: blur(12px) !important;
     -webkit-backdrop-filter: blur(12px) !important;
     border-right: 1px solid rgba(255, 255, 255, 0.1) !important;
 }
 
-/* --- Sidebar Menu Items --- */
-.hover\:bg-gray-100:hover,
-.dark\:hover\:bg-gray-700:hover {
-    background-color: var(--item-hover-bg) !important;
-    color: #6366f1 !important;
-    transform: translateX(4px);
-    transition: all 0.2s ease;
-}
-
-/* --- Sidebar Search Input --- */
-input[type="text"] {
-    border-radius: 12px !important;
-    padding: 10px 16px !important;
-    transition: all 0.3s ease;
-    border: 1px solid rgba(0, 0, 0, 0.05) !important;
-}
-
-input[type="text"]:focus {
-    border-color: #6366f1 !important;
-    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1) !important;
-}
-
-/* --- Note List Cards --- */
-.note-list-item,
-/* Generic guess for list item */
-div>div>div.cursor-pointer {
+/* --- 笔记列表卡片化 --- */
+.note-list-item, div>div>div.cursor-pointer {
     margin: 8px 12px !important;
     border-radius: 12px !important;
     background: white !important;
     box-shadow: var(--card-shadow) !important;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
     border: 1px solid transparent !important;
+    position: relative !important; /* 为删除按钮定位 */
 }
 
-.note-list-item:hover,
-div>div>div.cursor-pointer:hover {
+.note-list-item:hover, div>div>div.cursor-pointer:hover {
     box-shadow: var(--card-shadow-hover) !important;
     transform: translateY(-2px) !important;
     border-color: rgba(99, 102, 241, 0.2) !important;
 }
 
-.dark .note-list-item,
-.dark div>div>div.cursor-pointer {
+.dark .note-list-item, .dark div>div>div.cursor-pointer {
     background: #1e293b !important;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3) !important;
 }
 
-/* --- Active/Selected Note --- */
-.bg-blue-50,
-.dark\:bg-blue-900\/20 {
-    background-color: var(--item-hover-bg) !important;
-    border-left: 4px solid #6366f1 !important;
-}
-
-/* --- Buttons --- */
-.bg-blue-500,
-.bg-red-500,
-.delete-btn,
-button {
+/* --- 核心按钮优化 --- */
+.bg-blue-500, .bg-red-500, .delete-btn, button {
     pointer-events: auto !important;
     cursor: pointer !important;
     z-index: 10 !important;
@@ -103,112 +67,36 @@ button {
     transition: all 0.2s ease !important;
 }
 
-.bg-blue-500:hover {
-    filter: brightness(1.1) !important;
-    transform: translateY(-1px) !important;
-    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.23) !important;
-}
-
 .bg-blue-500:active {
     transform: scale(0.95) !important;
     filter: brightness(0.8) !important;
 }
 
-.bg-blue-600 {
-    background: var(--primary-gradient) !important;
-    filter: brightness(0.9) !important;
-}
-
-/* Delete Button Specifics - Using more robust selector */
-button.text-red-500,
-.delete-btn,
-[class*="delete"] {
-    opacity: 1 !important;
+/* --- 删除按钮：悬停才显示 --- */
+button.text-red-500, .delete-btn, [class*="delete"] {
+    opacity: 0 !important; /* 默认隐藏 */
     visibility: visible !important;
+    transition: opacity 0.2s ease, transform 0.2s ease !important;
 }
 
-.delete-btn:hover,
-button.text-red-500:hover {
+/* 当鼠标移入笔记条目时显示删除按钮 */
+.note-list-item:hover button.text-red-500,
+.note-list-item:hover .delete-btn,
+.note-list-item:hover [class*="delete"],
+div>div>div.cursor-pointer:hover button.text-red-500,
+div>div>div.cursor-pointer:hover .delete-btn {
+    opacity: 1 !important;
+}
+
+.delete-btn:hover, button.text-red-500:hover {
     color: #ef4444 !important;
     transform: scale(1.2) !important;
 }
 
-.delete-btn:active,
-button.text-red-500:active {
-    transform: scale(0.9) !important;
-}
-
-/* --- Editor & Content --- */
-#root>div>div>div:last-child {
-    background-color: white !important;
-    border-radius: 16px 0 0 0 !important;
-    box-shadow: -10px 0 30px rgba(0, 0, 0, 0.02) !important;
-}
-
-.dark #root>div>div>div:last-child {
-    background-color: #0f172a !important;
-}
-
-/* Markdown Rendering Clean up */
-.prose,
-.md-editor-preview {
-    font-size: 1.05rem !important;
-    line-height: 1.75 !important;
-    color: #334155 !important;
-}
-
-.dark .prose,
-.dark .md-editor-preview {
-    color: #cbd5e1 !important;
-}
-
-code {
-    background-color: #f1f5f9 !important;
-    padding: 0.2em 0.4em !important;
-    border-radius: 6px !important;
-    font-family: 'Fira Code', monospace !important;
-}
-
-.dark code {
-    background-color: #1e293b !important;
-}
-
-/* --- Scrollbar Customization --- */
-::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-}
-
-::-webkit-scrollbar-track {
-    background: transparent;
-}
-
+/* --- 自定义滚动条 --- */
+::-webkit-scrollbar { width: 8px; }
 ::-webkit-scrollbar-thumb {
     background: rgba(0, 0, 0, 0.1);
     border-radius: 10px;
 }
-
-.dark ::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.1);
-}
-
-::-webkit-scrollbar-thumb:hover {
-    background: rgba(99, 102, 241, 0.4);
-}
-
-/* --- Animations --- */
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.note-list-item {
-    animation: fadeIn 0.3s ease-out forwards;
-}
+.dark ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); }
