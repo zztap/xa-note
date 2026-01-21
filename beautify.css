@@ -1,6 +1,6 @@
-/* XA Note Beautification Overrides */
+/* XA Note 终极兼容美化版样式表 */
 
-/* --- Typography & Global --- */
+/* --- 字体与全局 --- */
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
 
 :root {
@@ -17,13 +17,13 @@ body {
     background-color: #f8fafc;
 }
 
-/* --- Dark Mode Variables --- */
+/* --- 深色模式变量 --- */
 .dark {
     --sidebar-bg-glass: rgba(30, 41, 59, 0.7);
     --item-hover-bg: rgba(168, 85, 247, 0.15);
 }
 
-/* --- Sidebar Glassmorphism --- */
+/* --- 侧边栏磨砂玻璃效果 --- */
 aside,
 .w-64 {
     background-color: var(--sidebar-bg-glass) !important;
@@ -32,31 +32,9 @@ aside,
     border-right: 1px solid rgba(255, 255, 255, 0.1) !important;
 }
 
-/* --- Sidebar Menu Items --- */
-.hover\:bg-gray-100:hover,
-.dark\:hover\:bg-gray-700:hover {
-    background-color: var(--item-hover-bg) !important;
-    color: #6366f1 !important;
-    transform: translateX(4px);
-    transition: all 0.2s ease;
-}
-
-/* --- Sidebar Search Input --- */
-input[type="text"] {
-    border-radius: 12px !important;
-    padding: 10px 16px !important;
-    transition: all 0.3s ease;
-    border: 1px solid rgba(0, 0, 0, 0.05) !important;
-}
-
-input[type="text"]:focus {
-    border-color: #6366f1 !important;
-    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1) !important;
-}
-
-/* --- Note List Cards --- */
+/* --- 笔记列表卡片化 --- */
+.note-item,
 .note-list-item,
-/* Generic guess for list item */
 div>div>div.cursor-pointer {
     margin: 8px 12px !important;
     border-radius: 12px !important;
@@ -64,8 +42,10 @@ div>div>div.cursor-pointer {
     box-shadow: var(--card-shadow) !important;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
     border: 1px solid transparent !important;
+    position: relative !important;
 }
 
+.note-item:hover,
 .note-list-item:hover,
 div>div>div.cursor-pointer:hover {
     box-shadow: var(--card-shadow-hover) !important;
@@ -73,20 +53,12 @@ div>div>div.cursor-pointer:hover {
     border-color: rgba(99, 102, 241, 0.2) !important;
 }
 
-.dark .note-list-item,
+.dark .note-item,
 .dark div>div>div.cursor-pointer {
     background: #1e293b !important;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3) !important;
 }
 
-/* --- Active/Selected Note --- */
-.bg-blue-50,
-.dark\:bg-blue-900\/20 {
-    background-color: var(--item-hover-bg) !important;
-    border-left: 4px solid #6366f1 !important;
-}
-
-/* --- Buttons --- */
+/* --- 核心按钮与删除逻辑 (兼容性最强版) --- */
 .bg-blue-500,
 .bg-red-500,
 .delete-btn,
@@ -94,85 +66,57 @@ button,
 [role="button"] {
     pointer-events: auto !important;
     cursor: pointer !important;
-    z-index: 100 !important;
-    /* High enough to stay on top */
+    z-index: 50 !important;
 }
 
-/* Delete Button Specifics - Expand Hit Area */
+.bg-blue-500 {
+    background: var(--primary-gradient) !important;
+    border: none !important;
+    box-shadow: 0 4px 14px 0 rgba(99, 102, 241, 0.39) !important;
+    transition: all 0.2s ease !important;
+}
+
+/* --- 删除按钮：悬停才显示 --- */
 button.text-red-500,
 .delete-btn,
 [class*="delete"] {
     opacity: 0 !important;
     visibility: visible !important;
-    pointer-events: auto !important;
-    cursor: pointer !important;
-    padding: 12px !important;
-    /* Make it easier to click */
-    margin: -10px !important;
-    /* Compensate for padding to keep icon centered */
     transition: opacity 0.2s ease, transform 0.2s ease !important;
-    background: transparent !important;
-    border-radius: 50% !important;
 }
 
-/* Show delete button when hovering over the note card OR the button itself */
+/* 触发显示：兼容多种结构 */
 .note-item:hover button.text-red-500,
 .note-item:hover .delete-btn,
 .note-item:hover [class*="delete"],
 .note-list-item:hover .delete-btn,
-div>div>div.cursor-pointer:hover .delete-btn,
-.delete-btn:hover {
+div>div>div.cursor-pointer:hover .delete-btn {
     opacity: 1 !important;
-}
-
-/* Tag Bar (Editor Tags) - Hover Reveal */
-.bg-green-100 button,
-[class*="tag"] button,
-.inline-flex.bg-green-100 button {
-    opacity: 0 !important;
-    pointer-events: auto !important;
-}
-
-.bg-green-100:hover button,
-[class*="tag"]:hover button,
-.inline-flex.bg-green-100:hover button {
-    opacity: 1 !important;
-}
-
-/* Tag Bar (Editor Tags) - Hover Reveal */
-.bg-green-100 .text-green-600,
-/* Possible selector for tag 'x' */
-span.inline-flex button,
-.tag-item button {
-    opacity: 0;
-    transition: opacity 0.2s ease;
-}
-
-span.inline-flex:hover button,
-.tag-item:hover button,
-.bg-green-100:hover .text-green-600 {
-    opacity: 1;
 }
 
 .delete-btn:hover,
 button.text-red-500:hover {
     color: #ef4444 !important;
-    transform: scale(1.2) !important;
+    transform: scale(1.3) !important;
+    /* 加大缩放，更容易点到 */
 }
 
-.delete-btn:active,
-button.text-red-500:active {
-    transform: scale(0.9) !important;
+/* --- 编辑器标签栏悬停逻辑 --- */
+.bg-green-100 button,
+[class*="tag"] button {
+    opacity: 0 !important;
 }
 
-/* --- Editor & Content --- */
+.bg-green-100:hover button,
+[class*="tag"]:hover button {
+    opacity: 1 !important;
+}
+
+/* --- 阅读页/预览区居中优化 --- */
 #root>div>div>div:last-child {
     background-color: white !important;
-    border-radius: 16px 0 0 0 !important;
-    box-shadow: -10px 0 30px rgba(0, 0, 0, 0.02) !important;
     display: flex !important;
     justify-content: center !important;
-    /* Center the document */
     overflow-y: auto !important;
 }
 
@@ -180,29 +124,23 @@ button.text-red-500:active {
     background-color: #0f172a !important;
 }
 
-/* Document Container Constraints */
 .md-editor-preview {
     max-width: 900px !important;
     width: 100% !important;
     padding: 40px !important;
     margin: 0 auto !important;
-    background: transparent !important;
 }
 
-/* Code Block Refinement */
+/* --- 代码块自适应修复 --- */
 .md-editor-code {
     border-radius: 12px !important;
     border: 1px solid rgba(0, 0, 0, 0.05) !important;
     margin: 1.5rem 0 !important;
     background-color: #f8fafc !important;
-    overflow-x: auto !important;
-    /* Allow horizontal scroll for long code */
     width: fit-content !important;
-    /* Adaptive width */
+    min-width: 250px !important;
     max-width: 100% !important;
-    /* Don't overflow the document */
-    min-width: 200px !important;
-    /* Avoid being too narrow for window controls */
+    overflow-x: auto !important;
 }
 
 .dark .md-editor-code {
@@ -210,38 +148,10 @@ button.text-red-500:active {
     border-color: rgba(255, 255, 255, 0.05) !important;
 }
 
-/* Markdown Rendering Clean up */
-.prose,
-.md-editor-preview {
-    font-size: 1.05rem !important;
-    line-height: 1.75 !important;
-    color: #334155 !important;
-}
-
-.dark .prose,
-.dark .md-editor-preview {
-    color: #cbd5e1 !important;
-}
-
-code {
-    background-color: #f1f5f9 !important;
-    padding: 0.2em 0.4em !important;
-    border-radius: 6px !important;
-    font-family: 'Fira Code', monospace !important;
-}
-
-.dark code {
-    background-color: #1e293b !important;
-}
-
-/* --- Scrollbar Customization --- */
+/* --- 自定义滚动条 --- */
 ::-webkit-scrollbar {
     width: 8px;
     height: 8px;
-}
-
-::-webkit-scrollbar-track {
-    background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
@@ -256,5 +166,3 @@ code {
 ::-webkit-scrollbar-thumb:hover {
     background: rgba(99, 102, 241, 0.4);
 }
-
-/
