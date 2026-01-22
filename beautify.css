@@ -1,0 +1,126 @@
+/* XA Note 终极焕新美化版 */
+
+/* --- 字体与全局 --- */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+
+:root {
+    --primary-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+    --sidebar-bg-glass: rgba(255, 255, 255, 0.7);
+    --item-hover-bg: rgba(99, 102, 241, 0.08);
+}
+
+body {
+    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+    background-color: #f8fafc;
+}
+
+/* --- 侧边栏磨砂玻璃 --- */
+aside,
+.w-64 {
+    background-color: var(--sidebar-bg-glass) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+}
+
+/* --- 笔记列表卡片化 --- */
+.note-item,
+.note-list-item,
+div>div>div.cursor-pointer {
+    margin: 8px 12px !important;
+    border-radius: 12px !important;
+    background: white !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+    transition: all 0.3s ease !important;
+    position: relative !important;
+}
+
+.note-item:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* --- 笔记删除：高响应度红色图标 (无背景遮罩，更清爽) --- */
+.delete-btn,
+button.text-red-500,
+[class*="delete"] {
+    opacity: 0 !important;
+    visibility: visible !important;
+    transition: all 0.2s ease !important;
+    pointer-events: auto !important;
+    cursor: pointer !important;
+    color: #94a3b8 !important;
+    /* 默认浅灰 */
+    z-index: 100 !important;
+}
+
+.note-item:hover .delete-btn,
+.note-item:hover button.text-red-500,
+.note-item:hover [class*="delete"] {
+    opacity: 1 !important;
+}
+
+.delete-btn:hover,
+button.text-red-500:hover {
+    color: #ef4444 !important;
+    transform: scale(1.3) !important;
+}
+
+/* --- 标签栏 (Tags)：恢复原生美感，仅确保功能 --- */
+.bg-green-100 .fa-xmark,
+.bg-green-100 svg[data-icon="xmark"],
+[class*="tag"] .fa-xmark {
+    pointer-events: auto !important;
+    cursor: pointer !important;
+    transition: color 0.2s ease !important;
+}
+
+.bg-green-100:hover .fa-xmark,
+.bg-green-100:hover svg[data-icon="xmark"] {
+    color: #ef4444 !important;
+}
+
+/* --- 预览页居中模式 --- */
+#root>div>div>div:last-child {
+    background-color: white !important;
+    display: flex !important;
+    justify-content: center !important;
+    overflow-y: auto !important;
+}
+
+.md-editor-preview {
+    max-width: 900px !important;
+    width: 100% !important;
+    padding: 40px !important;
+    margin: 0 auto !important;
+}
+
+/* --- 代码块自适应修复 --- */
+.md-editor-code {
+    border-radius: 12px !important;
+    background-color: #f8fafc !important;
+    width: fit-content !important;
+    min-width: 250px !important;
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    margin: 1.5rem 0 !important;
+    border: 1px solid rgba(0, 0, 0, 0.05) !important;
+}
+
+.dark .md-editor-code {
+    background-color: #1e293b !important;
+}
+
+/* --- 自定义滚动条 --- */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(99, 102, 241, 0.4);
+}
