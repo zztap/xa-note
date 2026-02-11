@@ -55,10 +55,10 @@ function generateSessionId(): string {
 // Password hashing using Web Crypto with salt and iterations
 async function hashPassword(password: string): Promise<string> {
   const encoder = new TextEncoder()
-  
+
   // Generate a random salt
   const salt = crypto.getRandomValues(new Uint8Array(16))
-  
+
   // Import the password as a key
   const passwordKey = await crypto.subtle.importKey(
     'raw',
@@ -67,7 +67,7 @@ async function hashPassword(password: string): Promise<string> {
     false,
     ['deriveBits']
   )
-  
+
   // Derive a key using PBKDF2 with 100,000 iterations
   const derivedBits = await crypto.subtle.deriveBits(
     {
@@ -79,13 +79,13 @@ async function hashPassword(password: string): Promise<string> {
     passwordKey,
     256
   )
-  
+
   // Combine salt and hash
   const hashArray = new Uint8Array(derivedBits)
   const combined = new Uint8Array(salt.length + hashArray.length)
   combined.set(salt)
   combined.set(hashArray, salt.length)
-  
+
   // Convert to base64
   return btoa(String.fromCharCode(...combined))
 }
@@ -93,12 +93,12 @@ async function hashPassword(password: string): Promise<string> {
 async function comparePassword(password: string, stored: string): Promise<boolean> {
   try {
     const encoder = new TextEncoder()
-    
+
     // Decode the stored hash
     const combined = Uint8Array.from(atob(stored), c => c.charCodeAt(0))
     const salt = combined.slice(0, 16)
     const storedHash = combined.slice(16)
-    
+
     // Import the password as a key
     const passwordKey = await crypto.subtle.importKey(
       'raw',
@@ -107,7 +107,7 @@ async function comparePassword(password: string, stored: string): Promise<boolea
       false,
       ['deriveBits']
     )
-    
+
     // Derive the same key
     const derivedBits = await crypto.subtle.deriveBits(
       {
@@ -119,17 +119,17 @@ async function comparePassword(password: string, stored: string): Promise<boolea
       passwordKey,
       256
     )
-    
+
     const hashArray = new Uint8Array(derivedBits)
-    
+
     // Compare hashes
     if (hashArray.length !== storedHash.length) return false
-    
+
     let result = 0
     for (let i = 0; i < hashArray.length; i++) {
       result |= hashArray[i] ^ storedHash[i]
     }
-    
+
     return result === 0
   } catch (error) {
     return false
@@ -247,15 +247,36 @@ const DATABASE_SCHEMA = `
     user_agent TEXT,
     created_at INTEGER NOT NULL
   );
+
+  -- Full Text Search Table
+  CREATE VIRTUAL TABLE IF NOT EXISTS notes_fts USING fts5(
+    title, 
+    content, 
+    tags, 
+    content='notes', 
+    content_rowid='rowid'
+  );
+
+  -- FTS Synchronization Triggers
+  CREATE TRIGGER IF NOT EXISTS notes_ai AFTER INSERT ON notes BEGIN
+    INSERT INTO notes_fts(rowid, title, content, tags) VALUES (new.rowid, new.title, new.content, new.tags);
+  END;
+  CREATE TRIGGER IF NOT EXISTS notes_ad AFTER DELETE ON notes BEGIN
+    INSERT INTO notes_fts(notes_fts, rowid, title, content, tags) VALUES('delete', old.rowid, old.title, old.content, old.tags);
+  END;
+  CREATE TRIGGER IF NOT EXISTS notes_au AFTER UPDATE ON notes BEGIN
+    INSERT INTO notes_fts(notes_fts, rowid, title, content, tags) VALUES('delete', old.rowid, old.title, old.content, old.tags);
+    INSERT INTO notes_fts(rowid, title, content, tags) VALUES (new.rowid, new.title, new.content, new.tags);
+  END;
 `;
 
 // 获取当前环境的基础URL
 function getBaseUrl(c: any): { apiUrl: string, frontendUrl: string } {
   const host = c.req.header('host') || 'localhost:9915'
-  const protocol = c.req.header('x-forwarded-proto') || 
-                   c.req.header('cf-visitor') ? 'https' : 
-                   (host.includes('localhost') ? 'http' : 'https')
-  
+  const protocol = c.req.header('x-forwarded-proto') ||
+    c.req.header('cf-visitor') ? 'https' :
+    (host.includes('localhost') ? 'http' : 'https')
+
   // Cloudflare Pages环境
   const baseUrl = `${protocol}://${host}`
   return {
@@ -276,11 +297,22 @@ app.use('*', async (c, next) => {
   }
 })
 
+// 安全中间件
+app.use('*', async (c, next) => {
+  await next()
+  c.header('X-Content-Type-Options', 'nosniff')
+  c.header('X-Frame-Options', 'DENY')
+  c.header('X-XSS-Protection', '1; mode=block')
+  c.header('Referrer-Policy', 'strict-origin-when-cross-origin')
+  // Cloudflare Pages 默认提供 HSTS，这里作为双重保险
+  c.header('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload')
+})
+
 // 认证中间件
 const requireAuth = async (c: any, next: any) => {
   const token = getCookie(c, 'auth_token')
   const sessionId = getCookie(c, 'session_id')
-  
+
   if (!token || !sessionId) {
     return c.json({ error: 'UNAUTHORIZED', reason: 'missing_cookies' }, 401)
   }
@@ -301,7 +333,7 @@ const requireInstallation = async (c: any, next: any) => {
     await next()
     return
   }
-  
+
   const db = c.get('db') as any
   const isInstalled = await db.isInstalled()
   if (!isInstalled) {
@@ -322,8 +354,8 @@ const preventReinstall = async (c: any, next: any) => {
 
 // 健康检查
 app.get('/api/health', (c) => {
-  return c.json({ 
-    status: 'ok', 
+  return c.json({
+    status: 'ok',
     platform: 'cloudflare-pages',
     database: 'd1',
     timestamp: new Date().toISOString()
@@ -342,7 +374,7 @@ app.get('/api/install/status', async (c) => {
 })
 
 // 日志记录辅助函数
-async function logAction(db: any, params: {
+async function logAction(c: any, params: {
   user_id: string
   action: string
   target_type?: string
@@ -351,33 +383,44 @@ async function logAction(db: any, params: {
   ip_address?: string
   user_agent?: string
 }): Promise<void> {
-  try {
-    const id = nanoid()
-    const created_at = Date.now()
-    
-    await db.prepare(`
-      INSERT INTO logs (id, user_id, action, target_type, target_id, details, ip_address, user_agent, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
-      id,
-      params.user_id,
-      params.action,
-      params.target_type || null,
-      params.target_id || null,
-      params.details ? JSON.stringify(params.details) : null,
-      params.ip_address || null,
-      params.user_agent || null,
-      created_at
-    )
-  } catch (error) {
-    console.error('Failed to log action:', error)
+  const db = c.get('db') as any
+  const executionCtx = c.executionCtx
+
+  const id = nanoid()
+  const created_at = Date.now()
+  const logPromise = (async () => {
+    try {
+      await db.prepare(`
+        INSERT INTO logs (id, user_id, action, target_type, target_id, details, ip_address, user_agent, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(
+        id,
+        params.user_id,
+        params.action,
+        params.target_type || null,
+        params.target_id || null,
+        params.details ? JSON.stringify(params.details) : null,
+        params.ip_address || null,
+        params.user_agent || null,
+        created_at
+      )
+    } catch (error) {
+      console.error('Failed to log action:', error)
+    }
+  })()
+
+  // Use waitUntil to avoid blocking the response
+  if (executionCtx) {
+    executionCtx.waitUntil(logPromise)
+  } else {
+    await logPromise
   }
 }
 
 // 获取日志列表
 app.get('/api/logs', requireAuth, async (c) => {
   const db = c.get('db') as any
-  
+
   try {
     const page = parseInt(c.req.query('page') || '1')
     const limit = parseInt(c.req.query('limit') || '50')
@@ -385,49 +428,51 @@ app.get('/api/logs', requireAuth, async (c) => {
     const targetType = c.req.query('target_type')
     const startDate = c.req.query('start_date')
     const endDate = c.req.query('end_date')
-    
+
     const offset = (page - 1) * limit
-    
+
     let whereClause = 'WHERE 1=1'
     const queryParams: any[] = []
-    
+
     if (action) {
       whereClause += ' AND action = ?'
       queryParams.push(action)
     }
-    
+
     if (targetType) {
       whereClause += ' AND target_type = ?'
       queryParams.push(targetType)
     }
-    
+
     if (startDate) {
       whereClause += ' AND created_at >= ?'
       queryParams.push(parseInt(startDate))
     }
-    
+
     if (endDate) {
       whereClause += ' AND created_at <= ?'
       queryParams.push(parseInt(endDate))
     }
-    
+
     // 获取总数
     const totalResult = await db.prepare(`SELECT COUNT(*) as count FROM logs ${whereClause}`).get(...queryParams) as any
     const total = totalResult?.count || 0
-    
+
     // 获取日志列表
     const logs = await db.prepare(`
       SELECT * FROM logs ${whereClause} 
       ORDER BY created_at DESC 
       LIMIT ? OFFSET ?
     `).all(...queryParams, limit, offset)
-    
+
     // 解析details字段
     const parsedLogs = logs.map((log: any) => ({
       ...log,
       details: log.details ? JSON.parse(log.details) : null
     }))
-    
+
+    // 为日志列表添加 Cache-Control: no-store，解决记录重置后的显示问题
+    c.header('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
     return c.json({
       logs: parsedLogs,
       total,
@@ -444,17 +489,23 @@ app.get('/api/logs', requireAuth, async (c) => {
 // 清理旧日志
 app.delete('/api/logs/cleanup', requireAuth, async (c) => {
   const db = c.get('db') as any
-  
+
   try {
     const { days = 90 } = await c.req.json()
-    const cutoffTime = Date.now() - (days * 24 * 60 * 60 * 1000)
-    
-    const result = await db.prepare('DELETE FROM logs WHERE created_at < ?').run(cutoffTime)
-    
-    return c.json({ 
-      ok: true, 
+    let result;
+
+    if (days === 0) {
+      // 如果天数为0，彻底清空所有日志
+      result = await db.prepare('DELETE FROM logs').run()
+    } else {
+      const cutoffTime = Date.now() - (days * 24 * 60 * 60 * 1000)
+      result = await db.prepare('DELETE FROM logs WHERE created_at < ?').run(cutoffTime)
+    }
+
+    return c.json({
+      ok: true,
       deletedCount: result.changes || 0,
-      message: `Deleted logs older than ${days} days`
+      message: days === 0 ? 'All logs cleared' : `Deleted logs older than ${days} days`
     })
   } catch (error) {
     console.error('Error cleaning up logs:', error)
@@ -465,7 +516,7 @@ app.delete('/api/logs/cleanup', requireAuth, async (c) => {
 // 安装接口
 app.post('/api/install', preventReinstall, async (c) => {
   const db = c.get('db') as any
-  
+
   try {
     const { siteTitle, adminEmail, adminPassword } = await c.req.json()
 
@@ -518,14 +569,6 @@ app.post('/api/install', preventReinstall, async (c) => {
       ['system.installed', '1']
     ]
 
-    for (const [key, value] of settings) {
-      await db.prepare('INSERT OR REPLACE INTO settings (key, value, updated_at) VALUES (?, ?, ?)').run(key, value, Date.now())
-    }
-
-    // 初始化默认分类
-    await db.prepare('INSERT OR REPLACE INTO categories (id, name, created_at) VALUES (?, ?, ?)').run('default', '默认', Date.now())
-
-    // 初始化默认笔记
     const noteContent = `# XA Note
 
 XA Note 是一款**轻量级、可完全自托管的个人笔记系统**，由您自行部署和管理，专为注重**隐私、安全与可控性**的用户设计。系统支持 Markdown 编辑、分类管理、标签系统和全文检索，提供流畅的写作体验与清晰的知识结构。
@@ -576,40 +619,22 @@ XA Note 是一款**轻量级、可完全自托管的个人笔记系统**，由�
 - **日志管理**：操作日志记录、查看和清理设置
 
 所有配置都可以通过 Web 界面进行管理，无需修改配置文件。
+`
 
-## 🚀 部署
+    // D1 Batch 优化：使用 Promise.all 提升并发性能
+    const setupTasks = settings.map(([key, value]) =>
+      db.prepare('INSERT OR REPLACE INTO settings (key, value, updated_at) VALUES (?, ?, ?)').run(key, value, Date.now())
+    )
 
-### 本地部署
-支持 \`npm start\` 直接运行
-
-### Docker部署
-支持 \`docker\` 一键部署
-
-### Cloudflare Pages部署
-无成本安全可用性高 \`Cloudflare Pages\` 部署
-
-## 🙏 致谢
-
-感谢所有开源项目的贡献者，XA Note 使用了以下优秀的开源项目：
-
-- React - 用户界面库
-- TypeScript - 类型安全的 JavaScript
-- Vite - 现代化的构建工具
-- Hono - 轻量级 Web 框架
-- Tailwind CSS - 实用优先的 CSS 框架
-- D1 - Cloudflare 分布式数据库
-
----
-**XA Note** - 轻量级自托管笔记系统，您的个人知识管理伙伴 🚀`
-
-    await db.prepare('INSERT OR REPLACE INTO notes (id, title, content, tags, category_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)').run(
+    setupTasks.push(db.prepare('INSERT OR REPLACE INTO categories (id, name, created_at) VALUES (?, ?, ?)').run('default', '默认', Date.now()))
+    setupTasks.push(db.prepare('INSERT OR REPLACE INTO notes (id, title, content, tags, category_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)').run(
       'xa-note-welcome', 'XA Note', noteContent, '', 'default', Date.now(), Date.now()
-    )
-
-    // 初始化默认分享
-    await db.prepare('INSERT OR REPLACE INTO shares (id, note_id, password, expires_at, created_at) VALUES (?, ?, ?, ?, ?)').run(
+    ))
+    setupTasks.push(db.prepare('INSERT OR REPLACE INTO shares (id, note_id, password, expires_at, created_at) VALUES (?, ?, ?, ?, ?)').run(
       'xa-note', 'xa-note-welcome', null, null, Date.now()
-    )
+    ))
+
+    await Promise.all(setupTasks)
 
     return c.json({ success: true, message: 'Installation completed' })
   } catch (error) {
@@ -621,7 +646,7 @@ XA Note 是一款**轻量级、可完全自托管的个人笔记系统**，由�
 // 登录接口
 app.post('/api/login', requireInstallation, async (c) => {
   const db = c.get('db') as any
-  
+
   try {
     const { email, password, captcha, turnstileToken } = await c.req.json()
 
@@ -629,22 +654,18 @@ app.post('/api/login', requireInstallation, async (c) => {
       return c.json({ ok: false, reason: 'missing_credentials' }, 400)
     }
 
-    // 获取验证设置
     const enableCaptcha = await db.prepare('SELECT value FROM settings WHERE key = ?').get('login.enable_captcha') as any
     const enableTurnstile = await db.prepare('SELECT value FROM settings WHERE key = ?').get('login.enable_turnstile') as any
     const turnstileSecretKey = await db.prepare('SELECT value FROM settings WHERE key = ?').get('login.turnstile_secret_key') as any
 
-    // 验证码验证
     if (enableCaptcha?.value === '1') {
       const savedCaptcha = getCookie(c, 'captcha')
       if (!captcha || !savedCaptcha || captcha.toLowerCase() !== savedCaptcha.toLowerCase()) {
         return c.json({ ok: false, error: 'captcha_invalid' }, 400)
       }
-      // 清除验证码cookie
       deleteCookie(c, 'captcha', { path: '/' })
     }
 
-    // Turnstile验证
     if (enableTurnstile?.value === '1' && turnstileSecretKey?.value) {
       if (!turnstileToken) {
         return c.json({ ok: false, error: 'turnstile_required' }, 400)
@@ -660,13 +681,12 @@ app.post('/api/login', requireInstallation, async (c) => {
         })
       })
 
-      const turnstileResult = await turnstileResponse.json()
+      const turnstileResult = await turnstileResponse.json() as any;
       if (!turnstileResult.success) {
         return c.json({ ok: false, error: 'turnstile_failed' }, 400)
       }
     }
 
-    // 获取管理员信息
     const adminEmail = await db.prepare('SELECT value FROM settings WHERE key = ?').get('admin.email') as any
     const adminPasswordHash = await db.prepare('SELECT value FROM settings WHERE key = ?').get('admin.password_hash') as any
 
@@ -674,10 +694,8 @@ app.post('/api/login', requireInstallation, async (c) => {
       return c.json({ ok: false, reason: 'admin_not_configured' }, 500)
     }
 
-    // 验证邮箱
     if (email !== adminEmail.value) {
-      // 记录失败的登录尝试
-      await logAction(db, {
+      await logAction(c, {
         user_id: 'unknown',
         action: 'login',
         target_type: 'user',
@@ -688,11 +706,9 @@ app.post('/api/login', requireInstallation, async (c) => {
       return c.json({ ok: false, error: 'email_incorrect' }, 401)
     }
 
-    // 验证密码
     const isValidPassword = await comparePassword(password, adminPasswordHash.value)
     if (!isValidPassword) {
-      // 记录失败的登录尝试
-      await logAction(db, {
+      await logAction(c, {
         user_id: adminEmail.value,
         action: 'login',
         target_type: 'user',
@@ -703,34 +719,13 @@ app.post('/api/login', requireInstallation, async (c) => {
       return c.json({ ok: false, error: 'invalid_credentials' }, 401)
     }
 
-    // 生成JWT token和session ID
-    const token = await generateToken({
-      userId: 'admin',
-      email: adminEmail.value,
-      role: 'admin'
-    })
+    const token = await generateToken({ userId: 'admin', email: adminEmail.value, role: 'admin' })
     const sessionId = generateSessionId()
 
-    // 设置cookies - Cloudflare Pages 使用 HTTPS
-    setCookie(c, 'auth_token', token, {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'Lax',
-      path: '/',
-      maxAge: 60 * 60 * 24 * 7, // 7天
-      domain: undefined
-    })
-    setCookie(c, 'session_id', sessionId, {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'Lax',
-      path: '/',
-      maxAge: 60 * 60 * 24 * 7, // 7天
-      domain: undefined
-    })
+    setCookie(c, 'auth_token', token, { httpOnly: true, secure: true, sameSite: 'Lax', path: '/', maxAge: 60 * 60 * 24 * 7 })
+    setCookie(c, 'session_id', sessionId, { httpOnly: true, secure: true, sameSite: 'Lax', path: '/', maxAge: 60 * 60 * 24 * 7 })
 
-    // 记录成功的登录
-    await logAction(db, {
+    await logAction(c, {
       user_id: adminEmail.value,
       action: 'login',
       target_type: 'user',
@@ -749,34 +744,19 @@ app.post('/api/login', requireInstallation, async (c) => {
 // GitHub OAuth
 app.get('/api/auth/github', requireInstallation, async (c) => {
   const db = c.get('db') as any
-  
   try {
     const enableGithub = await db.prepare('SELECT value FROM settings WHERE key = ?').get('login.enable_github') as any
-    if (!enableGithub || enableGithub.value !== '1') {
-      return c.json({ error: 'GitHub login not enabled' }, 400)
-    }
+    if (!enableGithub || enableGithub.value !== '1') return c.json({ error: 'GitHub login not enabled' }, 400)
 
     const clientIdRow = await db.prepare('SELECT value FROM settings WHERE key = ?').get('github.client_id') as any
-    if (!clientIdRow || !clientIdRow.value) {
-      return c.json({ error: 'GitHub client ID not configured' }, 500)
-    }
+    if (!clientIdRow?.value) return c.json({ error: 'GitHub client ID not configured' }, 500)
 
     const { apiUrl, frontendUrl } = getBaseUrl(c)
-    const redirectUri = `${apiUrl}/api/auth/github/callback`
+    const redirectUri = `${apiUrl} /api/auth / github / callback`
     const state = nanoid(32)
-    
-    // 保存 state 和前端URL 到 cookie 用于验证和重定向
-    setCookie(c, 'github_oauth_state', state, {
-      httpOnly: true,
-      maxAge: 600, // 10 分钟
-      path: '/'
-    })
-    
-    setCookie(c, 'github_oauth_frontend', frontendUrl, {
-      httpOnly: true,
-      maxAge: 600, // 10 分钟
-      path: '/'
-    })
+
+    setCookie(c, 'github_oauth_state', state, { httpOnly: true, maxAge: 600, path: '/' })
+    setCookie(c, 'github_oauth_frontend', frontendUrl, { httpOnly: true, maxAge: 600, path: '/' })
 
     const authUrl = new URL('https://github.com/login/oauth/authorize')
     authUrl.searchParams.set('client_id', clientIdRow.value)
@@ -793,7 +773,6 @@ app.get('/api/auth/github', requireInstallation, async (c) => {
 
 app.get('/api/auth/github/callback', async (c) => {
   const db = c.get('db') as any
-  
   try {
     const code = c.req.query('code')
     const state = c.req.query('state')
@@ -804,90 +783,45 @@ app.get('/api/auth/github/callback', async (c) => {
       return c.redirect(`${frontendUrl}/login?error=oauth_failed`)
     }
 
-    // 清除 state 和 frontend URL cookies
     deleteCookie(c, 'github_oauth_state')
     deleteCookie(c, 'github_oauth_frontend')
 
     const clientIdRow = await db.prepare('SELECT value FROM settings WHERE key = ?').get('github.client_id') as any
     const clientSecretRow = await db.prepare('SELECT value FROM settings WHERE key = ?').get('github.client_secret') as any
 
-    if (!clientIdRow?.value || !clientSecretRow?.value) {
-      return c.redirect(`${frontendUrl}/login?error=oauth_config`)
-    }
+    if (!clientIdRow?.value || !clientSecretRow?.value) return c.redirect(`${frontendUrl}/login?error=oauth_config`)
 
-    // 交换 access token
     const tokenResponse = await fetch('https://github.com/login/oauth/access_token', {
       method: 'POST',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        client_id: clientIdRow.value,
-        client_secret: clientSecretRow.value,
-        code: code,
-      })
+      headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ client_id: clientIdRow.value, client_secret: clientSecretRow.value, code })
     })
 
-    const tokenData = await tokenResponse.json()
-    
-    if (!tokenData.access_token) {
-      return c.redirect(`${frontendUrl}/login?error=oauth_token`)
-    }
+    const tokenData = await tokenResponse.json() as any;
+    if (!tokenData.access_token) return c.redirect(`${frontendUrl}/login?error=oauth_token`)
 
-    // 获取用户信息
     const userResponse = await fetch('https://api.github.com/user', {
-      headers: {
-        'Authorization': `Bearer ${tokenData.access_token}`,
-        'Accept': 'application/vnd.github.v3+json',
-      }
+      headers: { 'Authorization': `Bearer ${tokenData.access_token}`, 'Accept': 'application/vnd.github.v3+json' }
     })
+    const userData = await userResponse.json() as any;
 
-    const userData = await userResponse.json()
-
-    // 获取用户邮箱
     const emailResponse = await fetch('https://api.github.com/user/emails', {
-      headers: {
-        'Authorization': `Bearer ${tokenData.access_token}`,
-        'Accept': 'application/vnd.github.v3+json',
-      }
+      headers: { 'Authorization': `Bearer ${tokenData.access_token}`, 'Accept': 'application/vnd.github.v3+json' }
     })
-
-    const emailData = await emailResponse.json()
+    const emailData = await emailResponse.json() as any[];
     const primaryEmail = emailData.find((email: any) => email.primary)?.email || userData.email
 
-    // 检查是否是管理员邮箱
     const adminEmailRow = await db.prepare('SELECT value FROM settings WHERE key = ?').get('admin.email') as any
-    if (!adminEmailRow || primaryEmail !== adminEmailRow.value) {
-      return c.redirect(`${frontendUrl}/login?error=email_incorrect`)
-    }
+    if (!adminEmailRow || primaryEmail !== adminEmailRow.value) return c.redirect(`${frontendUrl}/login?error=email_incorrect`)
 
-    // 生成JWT token
-    const token = await generateToken({
-      userId: 'admin',
-      email: adminEmailRow.value,
-      role: 'admin'
-    })
-
-    // 生成session ID
+    const token = await generateToken({ userId: 'admin', email: adminEmailRow.value, role: 'admin' })
     const sessionId = generateSessionId()
 
-    // Cloudflare Pages 使用 HTTPS
-    const cookieOptions = {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'Lax' as const,
-      path: '/',
-      maxAge: 60 * 60 * 24 * 7, // 7 天
-      domain: undefined
-    }
-
-    // 设置认证cookies
+    const cookieOptions = { httpOnly: true, secure: true, sameSite: 'Lax' as const, path: '/', maxAge: 60 * 60 * 24 * 7 }
     setCookie(c, 'auth_token', token, cookieOptions)
     setCookie(c, 'session_id', sessionId, cookieOptions)
 
-    // 记录成功的GitHub登录
-    await logAction(db, {
+    await logAction(c, {
       user_id: adminEmailRow.value,
       action: 'login',
       target_type: 'user',
@@ -896,9 +830,7 @@ app.get('/api/auth/github/callback', async (c) => {
       user_agent: c.req.header('user-agent') || 'unknown'
     })
 
-    // 重定向回前端
     return c.redirect(`${frontendUrl}/`)
-
   } catch (error) {
     console.error('GitHub OAuth callback error:', error)
     const frontendUrl = getCookie(c, 'github_oauth_frontend') || getBaseUrl(c).frontendUrl
@@ -920,8 +852,8 @@ app.get('/api/me', requireInstallation, async (c) => {
     return c.json({ loggedIn: false, reason: 'invalid_token' }, 401)
   }
 
-  return c.json({ 
-    loggedIn: true, 
+  return c.json({
+    loggedIn: true,
     email: payload.email,
     role: payload.role
   })
@@ -930,18 +862,18 @@ app.get('/api/me', requireInstallation, async (c) => {
 // 退出登录
 app.post('/api/logout', async (c) => {
   const db = c.get('db') as any
-  
+
   // 获取当前用户信息用于日志记录
   const token = getCookie(c, 'auth_token')
   let userId = 'unknown'
-  
+
   if (token) {
     const payload = await verifyToken(token)
     if (payload) {
       userId = payload.email || payload.userId || 'admin'
     }
   }
-  
+
   // 记录登出操作
   await logAction(db, {
     user_id: userId,
@@ -951,7 +883,7 @@ app.post('/api/logout', async (c) => {
     ip_address: c.req.header('cf-connecting-ip') || c.req.header('x-forwarded-for') || 'unknown',
     user_agent: c.req.header('user-agent') || 'unknown'
   })
-  
+
   deleteCookie(c, 'auth_token', { path: '/' })
   deleteCookie(c, 'session_id', { path: '/' })
   return c.json({ ok: true })
@@ -960,12 +892,12 @@ app.post('/api/logout', async (c) => {
 // 获取系统信息
 app.get('/api/system/info', async (c) => {
   const db = c.get('db') as any
-  
+
   try {
     // 获取数据库统计信息
     const notesCount = await db.prepare('SELECT COUNT(*) as count FROM notes').get() as any
     const categoriesCount = await db.prepare('SELECT COUNT(*) as count FROM categories').get() as any
-    
+
     return c.json({
       name: 'XA Note',
       version: '1.0.0',
@@ -993,11 +925,11 @@ app.get('/api/system/info', async (c) => {
 // 获取公共设置
 app.get('/api/settings/public', async (c) => {
   const db = c.get('db') as any
-  
+
   try {
     const settings = [
       'login.enable_captcha',
-      'login.enable_turnstile', 
+      'login.enable_turnstile',
       'login.turnstile_site_key',
       'login.enable_github',
       'site.title',
@@ -1006,13 +938,13 @@ app.get('/api/settings/public', async (c) => {
       'site.avatar_prefix',
       'upload.max_file_size'
     ]
-    
+
     const result: any = {}
     for (const key of settings) {
       const row = await db.prepare('SELECT value FROM settings WHERE key = ?').get(key) as any
       result[key] = row?.value || getDefaultValue(key)
     }
-    
+
     return c.json(result)
   } catch (error) {
     return c.json({
@@ -1047,15 +979,15 @@ function getDefaultValue(key: string): string {
 // 获取所有设置（需要认证）
 app.get('/api/settings', requireAuth, async (c) => {
   const db = c.get('db') as any
-  
+
   try {
     const rows = await db.prepare('SELECT key, value FROM settings').all()
     const result: any = {}
-    
+
     for (const row of rows) {
       result[row.key] = row.value
     }
-    
+
     return c.json(result)
   } catch (error) {
     console.error('Error fetching settings:', error)
@@ -1160,7 +1092,7 @@ app.put('/api/categories/:id', requireAuth, async (c) => {
   const user = c.get('user')
   const id = c.req.param('id')
   const { name } = await c.req.json()
-  
+
   if (!id || !name) return c.json({ error: 'BAD_REQUEST' }, 400)
   if (id === 'default') return c.json({ error: 'CANNOT_EDIT_DEFAULT' }, 400)
 
@@ -1201,7 +1133,7 @@ app.delete('/api/categories/:id', requireAuth, async (c) => {
 
   // 记录分类删除
   if (category) {
-    await logAction(db, {
+    await logAction(c, {
       user_id: user.email || user.userId,
       action: 'delete_category',
       target_type: 'category',
@@ -1313,7 +1245,7 @@ app.delete('/api/notes/:id', requireAuth, async (c) => {
 
   // 从笔记表中删除
   await db.prepare('DELETE FROM notes WHERE id=?').run(id)
-  
+
   // 记录笔记删除
   await logAction(db, {
     user_id: user.email || user.userId,
@@ -1324,24 +1256,38 @@ app.delete('/api/notes/:id', requireAuth, async (c) => {
     ip_address: c.req.header('cf-connecting-ip') || c.req.header('x-forwarded-for') || 'unknown',
     user_agent: c.req.header('user-agent') || 'unknown'
   })
-  
+
   return c.json({ ok: true })
 })
 
-// Search
+// Search (FTS5 优化版本)
 app.get('/api/search', async (c) => {
   const db = c.get('db') as any
   const q = c.req.query('q')
   if (!q) return c.json([])
 
-  // Use LIKE search for reliability
+  try {
+    // 优先尝试 FTS5 全文检索，性能更好且支持按相关度排序
+    const rows = await db.prepare(`
+      SELECT n.* FROM notes n
+      JOIN notes_fts f ON n.rowid = f.rowid
+      WHERE notes_fts MATCH ?
+      ORDER BY rank
+    `).all(q)
+
+    if (rows && rows.length > 0) return c.json(rows)
+  } catch (ftsError) {
+    console.warn('FTS5 search failed, falling back to LIKE:', ftsError)
+  }
+
+  // Fallback to LIKE search
   const searchTerm = `%${q}%`
   const rows = await db.prepare(`
     SELECT * FROM notes 
     WHERE title LIKE ? OR content LIKE ? OR tags LIKE ?
     ORDER BY updated_at DESC
   `).all(searchTerm, searchTerm, searchTerm)
-  
+
   return c.json(rows)
 })
 
@@ -1371,12 +1317,12 @@ app.post('/api/share/:id', requireAuth, async (c) => {
   )
 
   // 记录分享创建
-  await logAction(db, {
+  await logAction(c, {
     user_id: user.email || user.userId,
     action: 'create_share',
     target_type: 'share',
     target_id: code,
-    details: { 
+    details: {
       note_id: id,
       has_password: !!body.password,
       expires_at: body.expiresAt
@@ -1411,7 +1357,7 @@ app.delete('/api/shares/:id', requireAuth, async (c) => {
 
   // 记录分享删除
   if (share) {
-    await logAction(db, {
+    await logAction(c, {
       user_id: user.email || user.userId,
       action: 'delete_share',
       target_type: 'share',
@@ -1449,12 +1395,12 @@ app.post('/api/share/:code/view', async (c) => {
   const note = await db.prepare('SELECT * FROM notes WHERE id=?').get(share.note_id) as any
 
   // 记录分享查看（匿名用户）
-  await logAction(db, {
+  await logAction(c, {
     user_id: 'anonymous',
     action: 'view_share',
     target_type: 'share',
     target_id: code,
-    details: { note_id: share.note_id },
+    details: { note_id: share.note_id, success: true },
     ip_address: c.req.header('cf-connecting-ip') || c.req.header('x-forwarded-for') || 'unknown',
     user_agent: c.req.header('user-agent') || 'unknown'
   })
@@ -1491,13 +1437,13 @@ app.get('/api/captcha', (c) => {
 // GitHub OAuth debug endpoint
 app.get('/api/auth/github/debug', requireInstallation, async (c) => {
   const db = c.get('db') as any
-  
+
   const enableGithub = await db.prepare('SELECT value FROM settings WHERE key = ?').get('login.enable_github') as any
   const clientId = await db.prepare('SELECT value FROM settings WHERE key = ?').get('github.client_id') as any
   const clientSecret = await db.prepare('SELECT value FROM settings WHERE key = ?').get('github.client_secret') as any
   const { apiUrl, frontendUrl } = getBaseUrl(c)
   const redirectUri = `${apiUrl}/api/auth/github/callback`
-  
+
   return c.json({
     enabled: enableGithub?.value === '1',
     hasClientId: !!clientId?.value,
@@ -1552,7 +1498,7 @@ app.post('/api/trash/:id/restore', requireAuth, async (c) => {
 
   // Remove from trash
   await db.prepare('DELETE FROM trash WHERE id=?').run(id)
-  
+
   // 记录笔记恢复
   await logAction(db, {
     user_id: user.email || user.userId,
@@ -1563,7 +1509,7 @@ app.post('/api/trash/:id/restore', requireAuth, async (c) => {
     ip_address: c.req.header('cf-connecting-ip') || c.req.header('x-forwarded-for') || 'unknown',
     user_agent: c.req.header('user-agent') || 'unknown'
   })
-  
+
   return c.json({ ok: true })
 })
 
@@ -1581,7 +1527,7 @@ app.delete('/api/trash/:id', requireAuth, async (c) => {
 
   // 记录永久删除
   if (trashNote) {
-    await logAction(db, {
+    await logAction(c, {
       user_id: user.email || user.userId,
       action: 'permanent_delete_note',
       target_type: 'note',
@@ -1606,14 +1552,14 @@ app.delete('/api/trash', requireAuth, async (c) => {
 app.get('/sitemap.xml', (c) => {
   // Get current request domain and protocol
   const host = c.req.header('host') || 'localhost:9915'
-  const protocol = c.req.header('x-forwarded-proto') || 
-                   c.req.header('cf-visitor') ? 'https' : 
-                   (host.includes('localhost') ? 'http' : 'https')
+  const protocol = c.req.header('x-forwarded-proto') ||
+    c.req.header('cf-visitor') ? 'https' :
+    (host.includes('localhost') ? 'http' : 'https')
   const baseUrl = `${protocol}://${host}`
-  
+
   // Get current date
   const currentDate = new Date().toISOString().split('T')[0]
-  
+
   const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:xhtml="http://www.w3.org/1999/xhtml">
@@ -1691,11 +1637,11 @@ app.get('/sitemap.xml', (c) => {
 app.get('/robots.txt', (c) => {
   // Get current request domain and protocol
   const host = c.req.header('host') || 'localhost:9915'
-  const protocol = c.req.header('x-forwarded-proto') || 
-                   c.req.header('cf-visitor') ? 'https' : 
-                   (host.includes('localhost') ? 'http' : 'https')
+  const protocol = c.req.header('x-forwarded-proto') ||
+    c.req.header('cf-visitor') ? 'https' :
+    (host.includes('localhost') ? 'http' : 'https')
   const baseUrl = `${protocol}://${host}`
-  
+
   const robots = `User-agent: *
 Allow: /
 
