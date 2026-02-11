@@ -141,13 +141,23 @@ button.text-red-500:hover {
 }
 
 #loader {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
     text-align: center;
     animation: fadeInUp 0.8s ease-out;
 }
 
 .loader-logo {
+    display: flex;
+    justify-content: center;
     margin-bottom: 20px;
     animation: pulse 2s infinite ease-in-out;
+}
+
+.loader-logo svg {
+    display: block;
 }
 
 .loader-text {

@@ -752,7 +752,7 @@ app.get('/api/auth/github', requireInstallation, async (c) => {
     if (!clientIdRow?.value) return c.json({ error: 'GitHub client ID not configured' }, 500)
 
     const { apiUrl, frontendUrl } = getBaseUrl(c)
-    const redirectUri = `${apiUrl} /api/auth / github / callback`
+    const redirectUri = `${apiUrl}/api/auth/github/callback`
     const state = nanoid(32)
 
     setCookie(c, 'github_oauth_state', state, { httpOnly: true, maxAge: 600, path: '/' })
