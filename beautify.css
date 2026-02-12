@@ -1,5 +1,5 @@
 /* XA Note Ultimate Refresh - Dynamic Edition */
-/* Build: 2026-02-12-v1.1.7 | Cache-Busting: 1770866629123 */
+/* Build: 2026-02-12-v1.1.8 | Cache-Busting: 1770868296123 */
 
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
 
@@ -38,7 +38,7 @@ aside,
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
 }
 
-/* --- 强制选中态样式 (High Priority Selection Override) --- */
+/* --- 强制选中态样式 --- */
 .note-item.active,
 .note-item[class*="active"],
 .note-item[class*="border-blue-"],
@@ -51,7 +51,7 @@ aside,
     box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15) !important;
 }
 
-/* --- 超淡雅彩色变体 (Refined Ultra-Pastel) --- */
+/* --- 超淡雅彩色变体 --- */
 .note-variant-1 {
     background: linear-gradient(to right, #fcfdff 0%, #edf4ff 100%) !important;
     border-left-color: #3b82f61a !important;
@@ -157,67 +157,75 @@ button:active {
     }
 }
 
-/* --- 代码框样式优化 (Code Block Layout Refinement v2) --- */
-/* 修复：解决宽度过长和展开后空白的问题 */
+/* --- 代码框样式深度调优 (Final Code Block Refinement) --- */
+/* 修复展开空白、避免横向过窄、保持紧致美感 */
 
 .md-editor-preview pre,
 .markdown-body pre,
 pre {
+    display: block !important;
+    width: auto !important;
+    /* 恢复水平占满，与 Header 同步 */
+    max-width: 100% !important;
+    min-width: 0 !important;
+    margin: 1rem 0 !important;
     padding: 0 !important;
-    /* 彻底移除 pre 的 padding，由内部 code 接管 */
-    margin: 0.8rem 0 !important;
     border-radius: 10px !important;
     border: 1px solid rgba(0, 0, 0, 0.05) !important;
-    background-color: #fcfdfe !important;
-    /* 更明亮的淡色 */
-    width: fit-content !important;
-    /* 宽度随内容自适应，不再横向撑满 */
-    min-width: 120px !important;
-    max-width: 100% !important;
-    display: inline-block !important;
-    /* 关键：强制块体宽度感应内部内容 */
+    background-color: #fcfdfd !important;
     overflow: visible !important;
-    /* 允许滚动条由内部 code 或外部容器处理 */
+    /* 确保不截断内容 */
 }
 
-/* 内部代码容器 */
+/* 内部真正承载代码的容器 */
 pre code {
     display: block !important;
     padding: 0.6rem 0.8rem !important;
-    /* 内边距设置在这里 */
+    /* 精简内边距 */
     line-height: 1.5 !important;
     font-size: 13px !important;
     font-family: 'Fira Code', 'JetBrains Mono', 'Consolas', monospace !important;
     background: transparent !important;
     border: none !important;
     overflow-x: auto !important;
-    /* 内部横向滚动 */
+    /* 仅在代码过长时出现内部横滚 */
     white-space: pre !important;
+    min-height: 1.5em !important;
+    /* 防止内容坍塌 */
 }
 
-/* 顶部装饰条修复 */
+/* 顶部装饰条平衡 */
 [class*="code-header"],
 .markdown-body .code-header {
-    display: flex !important;
-    justify-content: space-between;
-    align-items: center;
-    padding: 3px 10px !important;
+    background: rgba(0, 0, 0, 0.03) !important;
+    padding: 4px 10px !important;
     font-size: 11px !important;
-    background: rgba(0, 0, 0, 0.04) !important;
     border-top-left-radius: 10px !important;
     border-top-right-radius: 10px !important;
+    display: flex !important;
     width: 100% !important;
     box-sizing: border-box !important;
-    margin-bottom: -1px;
-    /* 消除间隙 */
 }
 
-/* 针对 details 展开逻辑的特殊兼容 */
+/* 解决 details 展开后的空洞感 */
+details summary+* {
+    margin-top: 0 !important;
+}
+
 details[open] pre {
-    display: inline-block !important;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
 }
 
-/* 针对单行紧凑代码 */
+/* 针对非行号代码块微调 */
 pre:not([class*="line-numbers"]) code {
-    padding: 0.4rem 0.8rem !important;
+    padding: 0.5rem 0.8rem !important;
+}
+
+/* 美化代码框内的标记/高亮 */
+pre code mark {
+    background: rgba(255, 235, 59, 0.3) !important;
+    border-radius: 3px;
+    padding: 0 2px;
 }
