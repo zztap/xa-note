@@ -164,3 +164,41 @@ button:active {
         width: 100%;
     }
 }
+
+/* --- 代码框样式优化 (Code Block Layout Optimization) --- */
+/* 核心目标：缩小过高的垂直间距，支持自适应宽度，提升紧致感 */
+pre {
+    padding: 0.5rem 0.8rem !important;
+    /* 精简内边距，使其更扁平 */
+    margin: 0.5rem 0 !important;
+    border-radius: 10px !important;
+    line-height: 1.4 !important;
+    font-size: 13px !important;
+    max-height: 480px !important;
+    overflow: auto !important;
+    width: auto !important;
+    min-width: 150px;
+    max-width: 100%;
+    border: 1px solid rgba(0, 0, 0, 0.05) !important;
+    background-color: #f8fafc !important;
+}
+
+pre code {
+    padding: 0 !important;
+    background: transparent !important;
+    border: none !important;
+    font-family: 'Fira Code', 'JetBrains Mono', 'Consolas', monospace !important;
+}
+
+/* 针对无行号的简单代码块使其更紧凑 */
+pre:not([class*="line-numbers"]) {
+    padding: 0.4rem 0.8rem !important;
+}
+
+/* 顶部装饰条紧凑化适配 */
+[class*="code-header"],
+.markdown-body .code-header {
+    padding: 3px 10px !important;
+    font-size: 11px !important;
+    opacity: 0.8;
+}
