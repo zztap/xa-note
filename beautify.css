@@ -1,5 +1,5 @@
 /* XA Note Ultimate Refresh - Dynamic Edition */
-/* Build: 2026-02-12-v1.2.5 | Cache-Busting: 1770871829123 */
+/* Build: 2026-02-12-v1.2.7 | Cache-Busting: 1770872229123 */
 
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
 
@@ -155,4 +155,10 @@ button:active {
     to {
         width: 100%;
     }
+}
+
+/* --- 极简自适应代码框 (Minimal Adaptive Code Block v1.2.7) --- */
+/* 仅一行 CSS，实现宽度随内容自适应且零侵入性 */
+.md-editor-code {
+    width: fit-content !important;
 }
