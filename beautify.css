@@ -78,7 +78,7 @@ aside,
 }
 
 .note-variant-6 {
-    background: linear-gradient(to right, #fafgff 0%, #f2ffff 100%) !important;
+    background: linear-gradient(to right, #f0fdfa 0%, #f2ffff 100%) !important;
     border-left-color: #14b8a61a !important;
 }
 
@@ -155,20 +155,4 @@ button:active {
     to {
         width: 100%;
     }
-}
-
-/* --- 纯净自适应代码框 (Pure Adaptive Code Block) --- */
-/* 仅使用 fit-content 实现宽度自适应，完整保留编辑器原始质感 */
-
-.md-editor-code,
-[class*="md-editor-code"] {
-    width: fit-content !important;
-    min-width: 300px !important;
-    max-width: 100% !important;
-    margin: 1rem 0 !important;
-}
-
-/* 兼容 details 展开 */
-details[open] .md-editor-code {
-    display: block !important;
 }
