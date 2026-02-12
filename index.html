@@ -210,6 +210,29 @@
       });
       observer.observe(document.body, { childList: true, subtree: true });
     })();
+
+    // 快捷键逻辑修复与行为拦截 (防止 Ctrl + K 刷新页面)
+    window.addEventListener('keydown', (e) => {
+      // 拦截 Ctrl + K 或 Cmd + K
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault(); // 强行拦截默认行为
+
+        // 尝试自动聚焦搜索框
+        const searchInput = document.querySelector('input[placeholder*="搜索"]');
+        if (searchInput) {
+          searchInput.focus();
+          // 如果不在侧边栏视口，可以尝试展开侧边栏（如果原程序支持）
+        } else {
+          // 如果弹窗没开，可以模拟点击搜索图标或按钮（如果能定位到）
+          console.log('Search shortcut intercepted, but input not found.');
+        }
+      }
+
+      // 额外保险：拦截 Ctrl + S 以防止触发系统保存弹窗
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+        // 通常原程序有处理，这里主要是二次保险，不强制 preventDefault 除非确定冲突
+      }
+    }, true); // 使用捕获阶段以获得最高优先权
   </script>
 </body>
 
