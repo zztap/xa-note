@@ -1,5 +1,5 @@
 /* XA Note Ultimate Refresh - Dynamic Edition */
-/* Build: 2026-02-12-v1.2.0 | Cache-Busting: 1770868829123 */
+/* Build: 2026-02-12-v1.2.1 | Cache-Busting: 1770869829123 */
 
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
 
@@ -38,7 +38,7 @@ aside,
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
 }
 
-/* --- 强制选中态样式 --- */
+/* --- 选中态样式 --- */
 .note-item.active,
 .note-item[class*="active"],
 .note-item[class*="border-blue-"],
@@ -157,79 +157,85 @@ button:active {
     }
 }
 
-/* --- 一体化代码框布局调优 (Unified Integrated Code Block) --- */
-/* 核心目标：消除“框中框”，实现 Header 与内容宽度协同自适应 */
+/* --- 终极一体化自适应代码框 (Ultimate Unified Code Block) --- */
+/* 核心：彻底消除多层边框 (Redundant Borders Cleanup) */
 
-/* 包装容器：控制整体宽度与边框 */
+/* 1. 最外层包装：唯一的边框承载者 */
 .md-editor-code,
-[class*="md-editor-code"] {
+[class*="md-editor-code"],
+.md-editor-preview .md-editor-code {
     display: inline-block !important;
-    /* 使容器宽度随内容自适应 */
     vertical-align: top;
     min-width: 280px !important;
-    /* 防止过短代码显得小气 */
     max-width: 100% !important;
-    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    /* 唯一的全局边框 */
     border-radius: 12px !important;
     background-color: #fbfcff !important;
-    /* 统一的极淡背景层 */
-    margin: 0.8rem 0 !important;
+    margin: 1rem 0 !important;
     overflow: hidden !important;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02) !important;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03) !important;
 }
 
-/* Header 部分：作为一体化框的顶部 */
+/* 2. Header 部分：剥离边框，仅保留底部细线 */
 [class*="code-header"],
 .markdown-body .code-header {
     background: rgba(0, 0, 0, 0.03) !important;
-    padding: 6px 12px !important;
+    padding: 6px 14px !important;
     font-size: 11px !important;
+    border: none !important;
+    /* 移除自带边框 */
     border-bottom: 1px solid rgba(0, 0, 0, 0.05) !important;
+    /* 仅保留内部分隔线 */
     display: flex !important;
     width: 100% !important;
     box-sizing: border-box !important;
     border-radius: 0 !important;
-    /* 统一由父容器控制圆角 */
 }
 
-/* 内容 pre：剥离自身外观，融入容器 */
+/* 3. 中间层 pre：必须彻底透明且无边框 */
 .md-editor-preview pre,
 .markdown-body pre,
 pre {
     background: transparent !important;
     border: none !important;
+    /* 关键：移除 pre 的冗余边框 */
+    outline: none !important;
     border-radius: 0 !important;
     margin: 0 !important;
     padding: 0 !important;
     width: 100% !important;
     display: block !important;
     box-shadow: none !important;
+    overflow: visible !important;
 }
 
-/* 内部 code 承载间距 */
+/* 4. 最内层 code：仅承载文字间距 */
 pre code {
     display: block !important;
-    padding: 0.7rem 1rem !important;
+    padding: 0.8rem 1.2rem !important;
     line-height: 1.5 !important;
     font-size: 13px !important;
     font-family: 'Fira Code', 'JetBrains Mono', 'Consolas', monospace !important;
+    background: transparent !important;
+    /* 关键：移除 code 的背景 */
+    border: none !important;
+    /* 关键：移除 code 的边框 */
     overflow-x: auto !important;
     white-space: pre !important;
 }
 
-/* 细节修复：折叠/展开兼容 */
+/* 兼容性修复：针对 details 内部的嵌套逻辑 */
 details[open] .md-editor-code {
     display: inline-block !important;
 }
 
-/* 代码装饰点阴影 */
-.code-header::before {
-    content: '';
-    display: inline-block;
+/* 细节：移除可能残留的行内标记边框 */
+.md-editor-preview pre code span {
+    border: none !important;
 }
 
-/* 美化代码框标记 */
-pre code mark {
-    background: rgba(255, 235, 59, 0.25) !important;
-    border-radius: 2px;
+/* 装饰：仅在大 box 上应用圆角 */
+.md-editor-code>* {
+    border-radius: 0 !important;
 }
