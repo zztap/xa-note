@@ -243,13 +243,12 @@
 
         const floatingModals = sidebar.querySelectorAll('.fixed, [class*="fixed"]');
         floatingModals.forEach(modal => {
-          // 只搬运那些需要完整显示的面板（通过特征判断，如包含“快捷键”文本或特定类名）
+          // 只搬运那些需要完整显示的面板
           if (modal.textContent.includes('快捷键') || modal.classList.contains('shadow-lg')) {
-            // 如果它还没被搬运过
             if (modal.parentElement !== document.body) {
-              // 计算原位置（防止瞬移导致的跳动，虽然 fixed 定位通常没问题）
+              modal.classList.add('custom-portal-modal'); // 标记类名，供 CSS 增强 z-index
               document.body.appendChild(modal);
-              console.log('Modal teleported to body to prevent clipping.');
+              console.log('Modal teleported to body.');
             }
           }
         });
@@ -261,8 +260,8 @@
       });
       portalObserver.observe(document.body, { childList: true, subtree: true });
 
-      // 初始执行一次
-      setInterval(teleportModals, 500); // 兜底定时器
+      // 增加轮询频率
+      setInterval(teleportModals, 200); // 200ms 检查一次
     })();
   </script>
 </body>

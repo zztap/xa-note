@@ -254,8 +254,9 @@ button:active {
 .fixed,
 [role="dialog"],
 .modal-overlay,
-div.fixed.inset-0 {
-    z-index: 9990 !important;
+div.fixed.inset-0,
+.custom-portal-modal {
+    z-index: 999999 !important;
 }
 
 /* 针对截图中的快捷键/功能弹窗进一步加固 */
@@ -276,7 +277,7 @@ div.fixed[style*="z-index"],
 /* 确保笔记列表在大容器里不会溢出干扰 */
 .note-list-container,
 #root>div>div>div:nth-child(2) {
-    z-index: 5 !important;
+    z-index: 10 !important;
 }
 
 /* 之前卡片设置了 position: relative，这里确保它不会抢占过高层级 */
