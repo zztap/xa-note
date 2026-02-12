@@ -152,6 +152,64 @@
         setTimeout(() => wrapper.remove(), 800);
       }
     }, 5000);
+
+    // 日志管理能力修复脚本 (注入 UI 按钮)
+    (function () {
+      function injectLogDeleteButton() {
+        // 定位日志弹窗
+        const modal = Array.from(document.querySelectorAll('div')).find(el =>
+          el.classList.contains('fixed') && el.textContent.includes('日志') && el.querySelector('.fa-xmark, svg')
+        );
+        if (!modal) return;
+
+        // 定位重置按钮
+        const buttons = Array.from(modal.querySelectorAll('button'));
+        const resetButton = buttons.find(b => b.textContent.trim() === '重置');
+        if (!resetButton || modal.querySelector('.custom-clear-logs-btn')) return;
+
+        const clearBtn = document.createElement('button');
+        clearBtn.className = 'custom-clear-logs-btn bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 transition-all flex items-center justify-center';
+        clearBtn.style.cssText = 'margin-left: 10px; background-color: #ef4444; color: white; padding: 6px 16px; border-radius: 6px; font-weight: 500; font-size: 14px;';
+        clearBtn.textContent = '清空全部日志';
+
+        clearBtn.onclick = async (e) => {
+          e.preventDefault();
+          if (confirm('⚠️ 确定要彻底清空所有操作日志吗？此操作无法撤销。')) {
+            clearBtn.disabled = true;
+            clearBtn.textContent = '清理中...';
+            try {
+              const res = await fetch('/api/logs/cleanup', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ days: 0 })
+              });
+              const data = await res.json();
+              if (data.ok) {
+                alert('Success: 日志已成功清空');
+                location.reload();
+              } else {
+                alert('Error: ' + (data.error || '清理失败'));
+              }
+            } catch (err) {
+              alert('Network Error: 无法连接至服务器');
+            } finally {
+              clearBtn.disabled = false;
+              clearBtn.textContent = '清空全部日志';
+            }
+          }
+        };
+
+        resetButton.parentNode.appendChild(clearBtn);
+      }
+
+      // 持续监听 DOM 变动，确保弹窗载入时能注入
+      const observer = new MutationObserver((mutations) => {
+        for (const mutation of mutations) {
+          if (mutation.addedNodes.length) injectLogDeleteButton();
+        }
+      });
+      observer.observe(document.body, { childList: true, subtree: true });
+    })();
   </script>
 </body>
 
