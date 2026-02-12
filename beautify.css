@@ -1,5 +1,5 @@
 /* XA Note Ultimate Refresh - Dynamic Edition */
-/* Build: 2026-02-12-v1.2.4 | Cache-Busting: 1770871429123 */
+/* Build: 2026-02-12-v1.2.5 | Cache-Busting: 1770871829123 */
 
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
 
@@ -157,28 +157,18 @@ button:active {
     }
 }
 
-/* --- 超精细自适应代码框 (Ultra-Minimal Adaptive Code Block) --- */
-/* 使用 display: table 完美平衡一体化宽度，完整保留原始质感 */
+/* --- 纯净自适应代码框 (Pure Adaptive Code Block) --- */
+/* 仅使用 fit-content 实现宽度自适应，完整保留编辑器原始质感 */
 
 .md-editor-code,
 [class*="md-editor-code"] {
-    display: table !important;
-    /* 稳健的收缩自适应技术 */
-    width: auto !important;
-    min-width: 260px !important;
+    width: fit-content !important;
+    min-width: 300px !important;
     max-width: 100% !important;
     margin: 1rem 0 !important;
-    text-align: left !important;
-}
-
-/* 确保内部组件作为表格行/整体宽度拉伸 */
-.md-editor-code .code-header,
-.md-editor-code pre {
-    width: 100% !important;
-    display: block !important;
 }
 
 /* 兼容 details 展开 */
 details[open] .md-editor-code {
-    display: table !important;
+    display: block !important;
 }
