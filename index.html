@@ -263,6 +263,28 @@
       // 增加轮询频率
       setInterval(teleportModals, 200); // 200ms 检查一次
     })();
+
+    // 笔记卡片彩色化脚本 (Pastel Colors)
+    (function () {
+      function applyRandomColors() {
+        // 定位未着色的笔记卡片
+        const cards = document.querySelectorAll('.note-item:not([data-colored]), .note-list-item:not([data-colored])');
+        cards.forEach(card => {
+          const variant = Math.floor(Math.random() * 6) + 1;
+          card.classList.add(`note-variant-${variant}`);
+          card.setAttribute('data-colored', 'true');
+        });
+      }
+
+      // 持续监听新卡片的加入
+      const colorObserver = new MutationObserver((mutations) => {
+        applyRandomColors();
+      });
+      colorObserver.observe(document.body, { childList: true, subtree: true });
+
+      // 兜底轮询
+      setInterval(applyRandomColors, 500);
+    })();
   </script>
 </body>
 

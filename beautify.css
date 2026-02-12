@@ -106,6 +106,37 @@ button:active {
     animation: loading 2s forwards;
 }
 
+/* --- 笔记色彩方案 (Pastel Color System) --- */
+.note-variant-1 {
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%) !important;
+    border-left: 4px solid #3b82f6 !important;
+}
+
+.note-variant-2 {
+    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%) !important;
+    border-left: 4px solid #22c55e !important;
+}
+
+.note-variant-3 {
+    background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%) !important;
+    border-left: 4px solid #8b5cf6 !important;
+}
+
+.note-variant-4 {
+    background: linear-gradient(135deg, #fdf2f8 0%, #fce7f3 100%) !important;
+    border-left: 4px solid #ec4899 !important;
+}
+
+.note-variant-5 {
+    background: linear-gradient(135deg, #fefce8 0%, #fef9c3 100%) !important;
+    border-left: 4px solid #eab308 !important;
+}
+
+.note-variant-6 {
+    background: linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%) !important;
+    border-left: 4px solid #14b8a6 !important;
+}
+
 @keyframes loading {
     to {
         width: 100%;
