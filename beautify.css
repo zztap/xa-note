@@ -1,5 +1,5 @@
 /* XA Note Ultimate Refresh - Dynamic Edition */
-/* Build: 2026-02-12-v1.1.5 | Cache-Busting: 1770861736629 */
+/* Build: 2026-02-12-v1.1.6 | Cache-Busting: 1770861736629 */
 
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
 
@@ -23,7 +23,6 @@ aside,
     border-right: 1px solid rgba(0, 0, 0, 0.05);
 }
 
-/* 基础笔记卡片样式 */
 .note-item {
     margin: 8px 12px !important;
     border-radius: 12px !important;
@@ -40,7 +39,6 @@ aside,
 }
 
 /* --- 强制选中态样式 (High Priority Selection Override) --- */
-/* 当由于点击产生的 active 状态、或者 Tailwind 的选中类名存在时，优先回正为白色并显示默认边框 */
 .note-item.active,
 .note-item[class*="active"],
 .note-item[class*="border-blue-"],
@@ -50,35 +48,47 @@ aside,
     background-color: #ffffff !important;
     background-image: none !important;
     border-left: 4px solid #3b82f6 !important;
-    /* 强制显示系统原生的蓝色标识头 */
     box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15) !important;
 }
 
-/* --- 超淡雅彩色变体 (Ultra-Pastel Variations) --- */
-/* 注意：这里不写 border-left，把“头部标识”交给系统或者上面的 active 规则处理 */
+/* --- 超淡雅彩色变体 (Refined Ultra-Pastel) --- */
+/* 进一步调优色相，增强区分度 */
 .note-variant-1 {
-    background: linear-gradient(to right, #fcfdff 0%, #f4f8ff 100%) !important;
+    background: linear-gradient(to right, #fcfdff 0%, #edf4ff 100%) !important;
+    border-left-color: #3b82f61a !important;
 }
 
+/* Blue */
 .note-variant-2 {
-    background: linear-gradient(to right, #fdfffe 0%, #f6fff9 100%) !important;
+    background: linear-gradient(to right, #fdfffe 0%, #effff6 100%) !important;
+    border-left-color: #22c55e1a !important;
 }
 
+/* Green */
 .note-variant-3 {
-    background: linear-gradient(to right, #fefeff 0%, #f9f8ff 100%) !important;
+    background: linear-gradient(to right, #fefeff 0%, #f6f4ff 100%) !important;
+    border-left-color: #8b5cf61a !important;
 }
 
+/* Purple */
 .note-variant-4 {
-    background: linear-gradient(to right, #fffefe 0%, #fff6fa 100%) !important;
+    background: linear-gradient(to right, #fffefe 0%, #fff4f8 100%) !important;
+    border-left-color: #ec48991a !important;
 }
 
+/* Pink */
 .note-variant-5 {
-    background: linear-gradient(to right, #fffefd 0%, #fffaf0 100%) !important;
+    background: linear-gradient(to right, #fffefd 0%, #fffbf2 100%) !important;
+    border-left-color: #f59e0b1a !important;
 }
 
+/* Amber */
 .note-variant-6 {
-    background: linear-gradient(to right, #faffff 0%, #f4ffff 100%) !important;
+    background: linear-gradient(to right, #fafgff 0%, #f2ffff 100%) !important;
+    border-left-color: #14b8a61a !important;
 }
+
+/* Teal */
 
 /* Modal & Portal Styling */
 .custom-portal-modal,
@@ -153,29 +163,4 @@ button:active {
     to {
         width: 100%;
     }
-}
-
-/* 修正：变体色彩下的侧边修饰条（仅用于未选中态） */
-.note-variant-1 {
-    border-left-color: #3b82f61a !important;
-}
-
-.note-variant-2 {
-    border-left-color: #22c55e1a !important;
-}
-
-.note-variant-3 {
-    border-left-color: #8b5cf61a !important;
-}
-
-.note-variant-4 {
-    border-left-color: #ec48991a !important;
-}
-
-.note-variant-5 {
-    border-left-color: #f59e0b1a !important;
-}
-
-.note-variant-6 {
-    border-left-color: #14b8a61a !important;
 }

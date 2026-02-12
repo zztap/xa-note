@@ -264,7 +264,7 @@
       setInterval(teleportModals, 200); // 200ms 检查一次
     })();
 
-    // 笔记卡片彩色化脚本 (Stable & Persistent Pastel Colors)
+    // 笔记卡片彩色化脚本 (Stable & Neighbor-Aware Pastel Colors)
     (function () {
       function getHash(str) {
         let hash = 0;
@@ -276,20 +276,37 @@
       }
 
       function applyStableColors() {
-        const cards = document.querySelectorAll('.note-item, .note-list-item');
-        cards.forEach(card => {
-          // 检查是否已经分配过变体类名，如果没有则根据内容分配
-          const hasVariant = Array.from(card.classList).some(c => c.startsWith('note-variant-'));
-          if (!hasVariant) {
-            const content = card.innerText || card.textContent || '';
-            const hash = getHash(content.substring(0, 30));
-            const variant = (hash % 6) + 1;
-            card.classList.add(`note-variant-${variant}`);
+        const cards = Array.from(document.querySelectorAll('.note-item, .note-list-item'));
+        let lastVariant = -1;
+
+        cards.forEach((card) => {
+          // 获取现有变体类名
+          const currentVariantClass = Array.from(card.classList).find(c => c.startsWith('note-variant-'));
+
+          // 获取核心内容 + 各种扰动特征 (长度、日期等)，使相似内容尽量分色
+          const content = card.innerText || card.textContent || '';
+          const salt = content.length + (card.querySelector('.text-xs')?.textContent?.length || 0);
+          const hash = getHash(content.substring(0, 100) + salt);
+
+          let variant = (hash % 6) + 1;
+
+          // 邻位差异化逻辑：如果跟上面一张卡片撞色了，则循环位移
+          if (variant === lastVariant) {
+            variant = (variant % 6) + 1;
           }
+
+          // 如果新计算的颜色与当前不同，或者没有颜色，则更新
+          const newVariantClass = `note-variant-${variant}`;
+          if (currentVariantClass !== newVariantClass) {
+            if (currentVariantClass) card.classList.remove(currentVariantClass);
+            card.classList.add(newVariantClass);
+          }
+
+          lastVariant = variant;
         });
       }
 
-      // 监视：不仅监测子节点，还监测类名变化 (比如选中/取消选中时 class 的变动)
+      // 监视：监测子节点变化和类名变化
       const colorObserver = new MutationObserver(() => applyStableColors());
       colorObserver.observe(document.body, {
         childList: true,
@@ -299,7 +316,7 @@
       });
 
       applyStableColors();
-      setInterval(applyStableColors, 1000);
+      setInterval(applyStableColors, 1500);
     })();
   </script>
 </body>
