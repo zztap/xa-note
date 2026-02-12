@@ -30,11 +30,25 @@ aside,
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
     transition: all 0.3s ease !important;
     z-index: 1 !important;
+    border-left: 4px solid transparent !important;
+    /* 基础边框占位 */
 }
 
 .note-item:hover {
     transform: translateY(-2px) !important;
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* 选中态修复：当卡片被选中时（通常会有特定的背景或边框），强制回归白色 */
+/* 这里的选择器尝试覆盖常见的 Tailwind 选中态特征 */
+.note-item[class*="bg-blue"],
+.note-item[class*="border-blue"],
+.note-item[style*="background-color"],
+.note-item.active {
+    background: white !important;
+    background-image: none !important;
+    border-left: 4px solid #3b82f6 !important;
+    /* 选中的蓝色边框 */
 }
 
 /* Modal Stacking & Portal Redesign */
@@ -106,34 +120,35 @@ button:active {
     animation: loading 2s forwards;
 }
 
-/* --- 笔记色彩方案 (Pastel Color System) --- */
-.note-variant-1 {
-    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%) !important;
+/* --- 笔记色彩方案 (Ultra-Pastel 2.0) --- */
+/* 极淡色彩，从左向右渐变 */
+.note-variant-1:not([class*="bg-blue"]):not(.active) {
+    background: linear-gradient(to right, #f8fbff 0%, #eef6ff 100%) !important;
     border-left: 4px solid #3b82f6 !important;
 }
 
-.note-variant-2 {
-    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%) !important;
+.note-variant-2:not([class*="bg-blue"]):not(.active) {
+    background: linear-gradient(to right, #f9fefb 0%, #f0fdf4 100%) !important;
     border-left: 4px solid #22c55e !important;
 }
 
-.note-variant-3 {
-    background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%) !important;
+.note-variant-3:not([class*="bg-blue"]):not(.active) {
+    background: linear-gradient(to right, #fbfaff 0%, #f5f3ff 100%) !important;
     border-left: 4px solid #8b5cf6 !important;
 }
 
-.note-variant-4 {
-    background: linear-gradient(135deg, #fdf2f8 0%, #fce7f3 100%) !important;
+.note-variant-4:not([class*="bg-blue"]):not(.active) {
+    background: linear-gradient(to right, #fffbff 0%, #fdf2f8 100%) !important;
     border-left: 4px solid #ec4899 !important;
 }
 
-.note-variant-5 {
-    background: linear-gradient(135deg, #fefce8 0%, #fef9c3 100%) !important;
-    border-left: 4px solid #eab308 !important;
+.note-variant-5:not([class*="bg-blue"]):not(.active) {
+    background: linear-gradient(to right, #fffefc 0%, #fffbeb 100%) !important;
+    border-left: 4px solid #f59e0b !important;
 }
 
-.note-variant-6 {
-    background: linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%) !important;
+.note-variant-6:not([class*="bg-blue"]):not(.active) {
+    background: linear-gradient(to right, #faffff 0%, #f0fdfa 100%) !important;
     border-left: 4px solid #14b8a6 !important;
 }
 
