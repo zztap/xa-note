@@ -549,7 +549,7 @@ app.post('/api/install', preventReinstall, async (c) => {
       ['site.title', siteTitle.trim()],
       ['site.logo', '/logo.png'],
       ['site.favicon', '/favicon.png'],
-      ['site.avatar_prefix', 'https://www.gravatar.com/avatar/'],
+      ['site.avatar_prefix', 'https://www.cravatar.cn/avatar/'],
       ['admin.email', adminEmail.trim()],
       ['admin.password_hash', passwordHash],
       ['login.enable_captcha', '0'],
