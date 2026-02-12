@@ -1,5 +1,5 @@
 /* XA Note Ultimate Refresh - Dynamic Edition */
-/* Build: 2026-02-12-v1.1.8 | Cache-Busting: 1770868296123 */
+/* Build: 2026-02-12-v1.2.0 | Cache-Busting: 1770868829123 */
 
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
 
@@ -157,75 +157,79 @@ button:active {
     }
 }
 
-/* --- 代码框样式深度调优 (Final Code Block Refinement) --- */
-/* 修复展开空白、避免横向过窄、保持紧致美感 */
+/* --- 一体化代码框布局调优 (Unified Integrated Code Block) --- */
+/* 核心目标：消除“框中框”，实现 Header 与内容宽度协同自适应 */
 
-.md-editor-preview pre,
-.markdown-body pre,
-pre {
-    display: block !important;
-    width: auto !important;
-    /* 恢复水平占满，与 Header 同步 */
+/* 包装容器：控制整体宽度与边框 */
+.md-editor-code,
+[class*="md-editor-code"] {
+    display: inline-block !important;
+    /* 使容器宽度随内容自适应 */
+    vertical-align: top;
+    min-width: 280px !important;
+    /* 防止过短代码显得小气 */
     max-width: 100% !important;
-    min-width: 0 !important;
-    margin: 1rem 0 !important;
-    padding: 0 !important;
-    border-radius: 10px !important;
-    border: 1px solid rgba(0, 0, 0, 0.05) !important;
-    background-color: #fcfdfd !important;
-    overflow: visible !important;
-    /* 确保不截断内容 */
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+    border-radius: 12px !important;
+    background-color: #fbfcff !important;
+    /* 统一的极淡背景层 */
+    margin: 0.8rem 0 !important;
+    overflow: hidden !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02) !important;
 }
 
-/* 内部真正承载代码的容器 */
-pre code {
-    display: block !important;
-    padding: 0.6rem 0.8rem !important;
-    /* 精简内边距 */
-    line-height: 1.5 !important;
-    font-size: 13px !important;
-    font-family: 'Fira Code', 'JetBrains Mono', 'Consolas', monospace !important;
-    background: transparent !important;
-    border: none !important;
-    overflow-x: auto !important;
-    /* 仅在代码过长时出现内部横滚 */
-    white-space: pre !important;
-    min-height: 1.5em !important;
-    /* 防止内容坍塌 */
-}
-
-/* 顶部装饰条平衡 */
+/* Header 部分：作为一体化框的顶部 */
 [class*="code-header"],
 .markdown-body .code-header {
     background: rgba(0, 0, 0, 0.03) !important;
-    padding: 4px 10px !important;
+    padding: 6px 12px !important;
     font-size: 11px !important;
-    border-top-left-radius: 10px !important;
-    border-top-right-radius: 10px !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05) !important;
     display: flex !important;
     width: 100% !important;
     box-sizing: border-box !important;
+    border-radius: 0 !important;
+    /* 统一由父容器控制圆角 */
 }
 
-/* 解决 details 展开后的空洞感 */
-details summary+* {
-    margin-top: 0 !important;
-}
-
-details[open] pre {
+/* 内容 pre：剥离自身外观，融入容器 */
+.md-editor-preview pre,
+.markdown-body pre,
+pre {
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
     display: block !important;
-    visibility: visible !important;
-    opacity: 1 !important;
+    box-shadow: none !important;
 }
 
-/* 针对非行号代码块微调 */
-pre:not([class*="line-numbers"]) code {
-    padding: 0.5rem 0.8rem !important;
+/* 内部 code 承载间距 */
+pre code {
+    display: block !important;
+    padding: 0.7rem 1rem !important;
+    line-height: 1.5 !important;
+    font-size: 13px !important;
+    font-family: 'Fira Code', 'JetBrains Mono', 'Consolas', monospace !important;
+    overflow-x: auto !important;
+    white-space: pre !important;
 }
 
-/* 美化代码框内的标记/高亮 */
+/* 细节修复：折叠/展开兼容 */
+details[open] .md-editor-code {
+    display: inline-block !important;
+}
+
+/* 代码装饰点阴影 */
+.code-header::before {
+    content: '';
+    display: inline-block;
+}
+
+/* 美化代码框标记 */
 pre code mark {
-    background: rgba(255, 235, 59, 0.3) !important;
-    border-radius: 3px;
-    padding: 0 2px;
+    background: rgba(255, 235, 59, 0.25) !important;
+    border-radius: 2px;
 }
