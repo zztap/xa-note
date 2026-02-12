@@ -247,5 +247,25 @@ button:active {
     transform: scale(0.95) !important;
 }
 
+/* --- 层级纠偏 (Stacking Order Fix) --- */
+/* 确保所有固定定位的弹窗、模态框始终在最顶层，不被卡片遮挡 */
+.fixed,
+[role="dialog"],
+.modal-overlay,
+div.fixed.inset-0 {
+    z-index: 9990 !important;
+}
+
+/* 针对截图中的快捷键/功能弹窗进一步加固 */
+.fixed.z-50,
+div.fixed[style*="z-index"] {
+    z-index: 9999 !important;
+}
+
+/* 之前卡片设置了 position: relative，这里确保它不会抢占过高层级 */
+.note-item {
+    z-index: 1 !important;
+}
+
 /* --- 自动隐藏启动页脚本 --- */
 /* 注意：这段代码在 CSS 中不起作用，我会将其注入到 index.html 中 */
