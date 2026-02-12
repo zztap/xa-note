@@ -1,5 +1,5 @@
-/* XA Note Ultimate Refresh - Compact Edition */
-/* Build: 2026-02-12-v1.1.3 | Cache-Busting: 1770861736629 */
+/* XA Note Ultimate Refresh - Dynamic Edition */
+/* Build: 2026-02-12-v1.1.5 | Cache-Busting: 1770861736629 */
 
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
 
@@ -23,12 +23,13 @@ aside,
     border-right: 1px solid rgba(0, 0, 0, 0.05);
 }
 
+/* 基础笔记卡片样式 */
 .note-item {
     margin: 8px 12px !important;
     border-radius: 12px !important;
     background: white !important;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
-    transition: all 0.2s ease !important;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
     z-index: 1 !important;
     border-left: 4px solid transparent !important;
 }
@@ -38,7 +39,48 @@ aside,
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
 }
 
-/* Modal Stacking & Portal Redesign */
+/* --- 强制选中态样式 (High Priority Selection Override) --- */
+/* 当由于点击产生的 active 状态、或者 Tailwind 的选中类名存在时，优先回正为白色并显示默认边框 */
+.note-item.active,
+.note-item[class*="active"],
+.note-item[class*="border-blue-"],
+.note-item[class*="ring-"],
+#root .note-item.bg-blue-50,
+#root .note-item.border-blue-500 {
+    background-color: #ffffff !important;
+    background-image: none !important;
+    border-left: 4px solid #3b82f6 !important;
+    /* 强制显示系统原生的蓝色标识头 */
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15) !important;
+}
+
+/* --- 超淡雅彩色变体 (Ultra-Pastel Variations) --- */
+/* 注意：这里不写 border-left，把“头部标识”交给系统或者上面的 active 规则处理 */
+.note-variant-1 {
+    background: linear-gradient(to right, #fcfdff 0%, #f4f8ff 100%) !important;
+}
+
+.note-variant-2 {
+    background: linear-gradient(to right, #fdfffe 0%, #f6fff9 100%) !important;
+}
+
+.note-variant-3 {
+    background: linear-gradient(to right, #fefeff 0%, #f9f8ff 100%) !important;
+}
+
+.note-variant-4 {
+    background: linear-gradient(to right, #fffefe 0%, #fff6fa 100%) !important;
+}
+
+.note-variant-5 {
+    background: linear-gradient(to right, #fffefd 0%, #fffaf0 100%) !important;
+}
+
+.note-variant-6 {
+    background: linear-gradient(to right, #faffff 0%, #f4ffff 100%) !important;
+}
+
+/* Modal & Portal Styling */
 .custom-portal-modal,
 .fixed.bottom-4.left-14,
 [class*="fixed"][class*="bottom-"] {
@@ -61,7 +103,7 @@ aside,
     line-height: 1.2 !important;
 }
 
-/* Global Elements */
+/* Global Styling */
 button {
     transition: all 0.2s ease !important;
 }
@@ -107,51 +149,33 @@ button:active {
     animation: loading 2s forwards;
 }
 
-/* --- 笔记色彩方案 (Ultra-Pastel 2.0) --- */
-/* 这里定义基础颜色，注意不要用 :not()，靠下方更具体的选中态样式来覆盖 */
-.note-variant-1 {
-    background: linear-gradient(to right, #f8fbff 0%, #eef6ff 100%) !important;
-    border-left: 4px solid #3b82f6 !important;
-}
-
-.note-variant-2 {
-    background: linear-gradient(to right, #f9fefb 0%, #f0fdf4 100%) !important;
-    border-left: 4px solid #22c55e !important;
-}
-
-.note-variant-3 {
-    background: linear-gradient(to right, #fbfaff 0%, #f5f3ff 100%) !important;
-    border-left: 4px solid #8b5cf6 !important;
-}
-
-.note-variant-4 {
-    background: linear-gradient(to right, #fffbff 0%, #fdf2f8 100%) !important;
-    border-left: 4px solid #ec4899 !important;
-}
-
-.note-variant-5 {
-    background: linear-gradient(to right, #fffefc 0%, #fffbeb 100%) !important;
-    border-left: 4px solid #f59e0b !important;
-}
-
-.note-variant-6 {
-    background: linear-gradient(to right, #faffff 0%, #f0fdfa 100%) !important;
-    border-left: 4px solid #14b8a6 !important;
-}
-
-/* 选中态修复：放在变体样式之后，利用 CSS 顺序优势 */
-/* 只有当元素具有代表“选中”的特征时，才强制变白 */
-.note-item.active,
-.note-item[class*="border-blue-"],
-.note-item[class*="ring-"],
-.note-item[class*="shadow-outline"] {
-    background: white !important;
-    background-image: none !important;
-    border-left: 4px solid #3b82f6 !important;
-}
-
 @keyframes loading {
     to {
         width: 100%;
     }
+}
+
+/* 修正：变体色彩下的侧边修饰条（仅用于未选中态） */
+.note-variant-1 {
+    border-left-color: #3b82f61a !important;
+}
+
+.note-variant-2 {
+    border-left-color: #22c55e1a !important;
+}
+
+.note-variant-3 {
+    border-left-color: #8b5cf61a !important;
+}
+
+.note-variant-4 {
+    border-left-color: #ec48991a !important;
+}
+
+.note-variant-5 {
+    border-left-color: #f59e0b1a !important;
+}
+
+.note-variant-6 {
+    border-left-color: #14b8a61a !important;
 }
