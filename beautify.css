@@ -1,6 +1,6 @@
-/* XA Note 终极焕新美化版 */
+/* XA Note Ultimate Refresh - Compact Edition */
+/* Build: 2026-02-12-v1.1.2 | Cache-Busting: 1770861736629 */
 
-/* --- 字体与全局 --- */
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
 
 :root {
@@ -10,30 +10,26 @@
 }
 
 body {
-    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+    font-family: 'Outfit', -apple-system, sans-serif !important;
     background-color: #f8fafc;
 }
 
-/* --- 侧边栏磨砂玻璃 --- */
 aside,
 .w-64 {
     background-color: var(--sidebar-bg-glass) !important;
     backdrop-filter: blur(12px) !important;
     -webkit-backdrop-filter: blur(12px) !important;
     overflow: visible !important;
-    /* 关键：防止侧边栏裁剪弹窗 */
+    border-right: 1px solid rgba(0, 0, 0, 0.05);
 }
 
-/* --- 笔记列表卡片化 --- */
-.note-item,
-.note-list-item,
-div>div>div.cursor-pointer {
+.note-item {
     margin: 8px 12px !important;
     border-radius: 12px !important;
     background: white !important;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
     transition: all 0.3s ease !important;
-    position: relative !important;
+    z-index: 1 !important;
 }
 
 .note-item:hover {
@@ -41,80 +37,41 @@ div>div>div.cursor-pointer {
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
 }
 
-/* --- 笔记删除：高响应度红色图标 (无背景遮罩，更清爽) --- */
-.delete-btn,
-button.text-red-500,
-[class*="delete"] {
-    opacity: 0 !important;
-    visibility: visible !important;
+/* Modal Stacking & Portal Redesign */
+.custom-portal-modal,
+.fixed.bottom-4.left-14,
+[class*="fixed"][class*="bottom-"] {
+    position: fixed !important;
+    z-index: 9999999 !important;
+    left: 10px !important;
+    bottom: 60px !important;
+    min-width: 180px !important;
+    max-width: 220px !important;
+    background: white !important;
+    padding: 8px !important;
+    border-radius: 10px !important;
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2) !important;
+    font-size: 12px !important;
+}
+
+.custom-portal-modal * {
+    margin-bottom: 2px !important;
+    line-height: 1.2 !important;
+}
+
+/* Global Elements */
+button {
     transition: all 0.2s ease !important;
-    pointer-events: auto !important;
-    cursor: pointer !important;
-    color: #94a3b8 !important;
-    /* 默认浅灰 */
-    z-index: 100 !important;
 }
 
-.note-item:hover .delete-btn,
-.note-item:hover button.text-red-500,
-.note-item:hover [class*="delete"] {
-    opacity: 1 !important;
+button:active {
+    transform: scale(0.95) !important;
 }
 
-.delete-btn:hover,
-button.text-red-500:hover {
-    color: #ef4444 !important;
-    transform: scale(1.3) !important;
-}
-
-/* --- 标签栏 (Tags)：恢复原生美感，仅确保功能 --- */
-.bg-green-100 .fa-xmark,
-.bg-green-100 svg[data-icon="xmark"],
-[class*="tag"] .fa-xmark {
-    pointer-events: auto !important;
-    cursor: pointer !important;
-    transition: color 0.2s ease !important;
-}
-
-.bg-green-100:hover .fa-xmark,
-.bg-green-100:hover svg[data-icon="xmark"] {
-    color: #ef4444 !important;
-}
-
-/* --- 阅读页左对齐模式 (取消居中) --- */
-#root>div>div>div:last-child {
-    background-color: white !important;
-    overflow-y: auto !important;
-}
-
-.md-editor-preview {
-    max-width: 1000px !important;
-    width: 100% !important;
-    padding: 40px !important;
-    margin: 0 !important;
-    /* 靠左对齐 */
-}
-
-/* --- 代码块自适应修复 --- */
-.md-editor-code {
-    border-radius: 12px !important;
-    background-color: #f8fafc !important;
-    width: fit-content !important;
-    min-width: 250px !important;
-    max-width: 100% !important;
-    overflow-x: auto !important;
-    margin: 1.5rem 0 !important;
-    border: 1px solid rgba(0, 0, 0, 0.05) !important;
-}
-
-.dark .md-editor-code {
-    background-color: #1e293b !important;
-}
-
-/* --- 自定义滚动条 --- */
 ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 6px;
+    height: 6px;
 }
 
 ::-webkit-scrollbar-thumb {
@@ -122,186 +79,35 @@ button.text-red-500:hover {
     border-radius: 10px;
 }
 
-::-webkit-scrollbar-thumb:hover {
-    background: rgba(99, 102, 241, 0.4);
-}
-
-/* --- 启动页 (Splash Screen) --- */
+/* Splash Screen */
 #loader-wrapper {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background: #ffffff;
+    background: white;
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 9999;
-    transition: opacity 0.6s cubic-bezier(0.645, 0.045, 0.355, 1),
-        visibility 0.6s cubic-bezier(0.645, 0.045, 0.355, 1);
+    z-index: 99999;
 }
 
-#loader {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    animation: fadeInUp 0.8s ease-out;
-}
-
-.loader-logo {
-    display: flex;
-    justify-content: center;
-    margin-bottom: 20px;
-    animation: pulse 2s infinite ease-in-out;
-}
-
-.loader-logo svg {
-    display: block;
-}
-
-.loader-text {
-    font-size: 24px;
-    font-weight: 700;
-    color: #1e293b;
-    letter-spacing: 2px;
-    margin-bottom: 15px;
-}
-
-.loader-progress {
-    width: 160px;
-    height: 4px;
-    background: #f1f5f9;
-    border-radius: 4px;
-    overflow: hidden;
-    margin: 0 auto;
+#loader-wrapper.loaded {
+    opacity: 0;
+    visibility: hidden;
+    transition: 0.6s;
 }
 
 .loader-progress-bar {
     width: 0%;
-    height: 100%;
+    height: 4px;
     background: var(--primary-gradient);
-    animation: loading 2.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-}
-
-/* 隐藏动画 */
-#loader-wrapper.loaded {
-    opacity: 0;
-    visibility: hidden;
-}
-
-@keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-@keyframes pulse {
-
-    0%,
-    100% {
-        transform: scale(1);
-    }
-
-    50% {
-        transform: scale(1.05);
-    }
+    animation: loading 2s forwards;
 }
 
 @keyframes loading {
-    0% {
-        width: 0%;
-    }
-
-    20% {
-        width: 30%;
-    }
-
-    50% {
-        width: 70%;
-    }
-
-    100% {
+    to {
         width: 100%;
     }
 }
-
-/* --- 高级磨砂玻璃 --- */
-aside,
-.w-64 {
-    border-right: 1px solid rgba(0, 0, 0, 0.05);
-}
-
-/* --- 按钮焕新 --- */
-button {
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
-}
-
-button:active {
-    transform: scale(0.95) !important;
-}
-
-/* --- 层级纠偏 (Stacking Order Fix) --- */
-/* 确保所有固定定位的弹窗、模态框始终在最顶层，不被卡片遮挡 */
-.fixed,
-[role="dialog"],
-.modal-overlay,
-div.fixed.inset-0,
-.custom-portal-modal {
-    z-index: 999999 !important;
-}
-
-/* 针对截图中的快捷键/功能弹窗进一步加固 */
-.fixed.z-50,
-div.fixed[style*="z-index"],
-[class*="shadow-lg"][class*="rounded"] {
-    z-index: 9999 !important;
-    overflow: visible !important;
-}
-
-/* 强制让快捷键面板不被裁剪，并改为超紧凑、靠左布局 */
-.fixed.bottom-4.left-14,
-[class*="fixed"][class*="bottom-"],
-.custom-portal-modal {
-    min-width: 220px !important;
-    max-width: 240px !important;
-    left: 10px !important;
-    bottom: 60px !important;
-    padding: 10px !important;
-    font-size: 13px !important;
-    z-index: 999999 !important;
-    border: 1px solid rgba(0, 0, 0, 0.08) !important;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2) !important;
-}
-
-/* 缩小弹窗内的具体内容间距 */
-.custom-portal-modal div,
-.custom-portal-modal span,
-.custom-portal-modal p,
-.custom-portal-modal .flex {
-    padding-top: 2px !important;
-    padding-bottom: 2px !important;
-    margin-bottom: 2px !important;
-}
-
-/* 确保笔记列表在视觉上层级较低 */
-.note-list-container,
-#root>div>div>div:nth-child(2) {
-    z-index: 5 !important;
-}
-
-/* 之前卡片设置了 position: relative，这里确保它低层级 */
-.note-item {
-    z-index: 1 !important;
-}
-
-/* --- 自动隐藏启动页脚本 --- */
-/* 注意：这段代码在 CSS 中不起作用，我会将其注入到 index.html 中 */
