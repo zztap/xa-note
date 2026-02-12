@@ -1,5 +1,5 @@
 /* XA Note Ultimate Refresh - Dynamic Edition */
-/* Build: 2026-02-12-v1.1.6 | Cache-Busting: 1770861736629 */
+/* Build: 2026-02-12-v1.1.7 | Cache-Busting: 1770866629123 */
 
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
 
@@ -52,43 +52,35 @@ aside,
 }
 
 /* --- 超淡雅彩色变体 (Refined Ultra-Pastel) --- */
-/* 进一步调优色相，增强区分度 */
 .note-variant-1 {
     background: linear-gradient(to right, #fcfdff 0%, #edf4ff 100%) !important;
     border-left-color: #3b82f61a !important;
 }
 
-/* Blue */
 .note-variant-2 {
     background: linear-gradient(to right, #fdfffe 0%, #effff6 100%) !important;
     border-left-color: #22c55e1a !important;
 }
 
-/* Green */
 .note-variant-3 {
     background: linear-gradient(to right, #fefeff 0%, #f6f4ff 100%) !important;
     border-left-color: #8b5cf61a !important;
 }
 
-/* Purple */
 .note-variant-4 {
     background: linear-gradient(to right, #fffefe 0%, #fff4f8 100%) !important;
     border-left-color: #ec48991a !important;
 }
 
-/* Pink */
 .note-variant-5 {
     background: linear-gradient(to right, #fffefd 0%, #fffbf2 100%) !important;
     border-left-color: #f59e0b1a !important;
 }
 
-/* Amber */
 .note-variant-6 {
     background: linear-gradient(to right, #fafgff 0%, #f2ffff 100%) !important;
     border-left-color: #14b8a61a !important;
 }
-
-/* Teal */
 
 /* Modal & Portal Styling */
 .custom-portal-modal,
@@ -165,40 +157,67 @@ button:active {
     }
 }
 
-/* --- 代码框样式优化 (Code Block Layout Optimization) --- */
-/* 核心目标：缩小过高的垂直间距，支持自适应宽度，提升紧致感 */
+/* --- 代码框样式优化 (Code Block Layout Refinement v2) --- */
+/* 修复：解决宽度过长和展开后空白的问题 */
+
+.md-editor-preview pre,
+.markdown-body pre,
 pre {
-    padding: 0.5rem 0.8rem !important;
-    /* 精简内边距，使其更扁平 */
-    margin: 0.5rem 0 !important;
+    padding: 0 !important;
+    /* 彻底移除 pre 的 padding，由内部 code 接管 */
+    margin: 0.8rem 0 !important;
     border-radius: 10px !important;
-    line-height: 1.4 !important;
-    font-size: 13px !important;
-    max-height: 480px !important;
-    overflow: auto !important;
-    width: auto !important;
-    min-width: 150px;
-    max-width: 100%;
     border: 1px solid rgba(0, 0, 0, 0.05) !important;
-    background-color: #f8fafc !important;
+    background-color: #fcfdfe !important;
+    /* 更明亮的淡色 */
+    width: fit-content !important;
+    /* 宽度随内容自适应，不再横向撑满 */
+    min-width: 120px !important;
+    max-width: 100% !important;
+    display: inline-block !important;
+    /* 关键：强制块体宽度感应内部内容 */
+    overflow: visible !important;
+    /* 允许滚动条由内部 code 或外部容器处理 */
 }
 
+/* 内部代码容器 */
 pre code {
-    padding: 0 !important;
+    display: block !important;
+    padding: 0.6rem 0.8rem !important;
+    /* 内边距设置在这里 */
+    line-height: 1.5 !important;
+    font-size: 13px !important;
+    font-family: 'Fira Code', 'JetBrains Mono', 'Consolas', monospace !important;
     background: transparent !important;
     border: none !important;
-    font-family: 'Fira Code', 'JetBrains Mono', 'Consolas', monospace !important;
+    overflow-x: auto !important;
+    /* 内部横向滚动 */
+    white-space: pre !important;
 }
 
-/* 针对无行号的简单代码块使其更紧凑 */
-pre:not([class*="line-numbers"]) {
-    padding: 0.4rem 0.8rem !important;
-}
-
-/* 顶部装饰条紧凑化适配 */
+/* 顶部装饰条修复 */
 [class*="code-header"],
 .markdown-body .code-header {
+    display: flex !important;
+    justify-content: space-between;
+    align-items: center;
     padding: 3px 10px !important;
     font-size: 11px !important;
-    opacity: 0.8;
+    background: rgba(0, 0, 0, 0.04) !important;
+    border-top-left-radius: 10px !important;
+    border-top-right-radius: 10px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    margin-bottom: -1px;
+    /* 消除间隙 */
+}
+
+/* 针对 details 展开逻辑的特殊兼容 */
+details[open] pre {
+    display: inline-block !important;
+}
+
+/* 针对单行紧凑代码 */
+pre:not([class*="line-numbers"]) code {
+    padding: 0.4rem 0.8rem !important;
 }
