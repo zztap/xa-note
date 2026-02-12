@@ -20,6 +20,8 @@ aside,
     background-color: var(--sidebar-bg-glass) !important;
     backdrop-filter: blur(12px) !important;
     -webkit-backdrop-filter: blur(12px) !important;
+    overflow: visible !important;
+    /* 关键：防止侧边栏裁剪弹窗 */
 }
 
 /* --- 笔记列表卡片化 --- */
@@ -258,8 +260,23 @@ div.fixed.inset-0 {
 
 /* 针对截图中的快捷键/功能弹窗进一步加固 */
 .fixed.z-50,
-div.fixed[style*="z-index"] {
+div.fixed[style*="z-index"],
+[class*="shadow-lg"][class*="rounded"] {
     z-index: 9999 !important;
+    overflow: visible !important;
+}
+
+/* 强制让快捷键面板不被裁剪，并增加清晰度 */
+.fixed.bottom-4.left-14,
+[class*="fixed"][class*="bottom-"] {
+    min-width: 280px !important;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* 确保笔记列表在大容器里不会溢出干扰 */
+.note-list-container,
+#root>div>div>div:nth-child(2) {
+    z-index: 5 !important;
 }
 
 /* 之前卡片设置了 position: relative，这里确保它不会抢占过高层级 */
