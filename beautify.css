@@ -267,20 +267,38 @@ div.fixed[style*="z-index"],
     overflow: visible !important;
 }
 
-/* 强制让快捷键面板不被裁剪，并增加清晰度 */
+/* 强制让快捷键面板不被裁剪，并改为超紧凑、靠左布局 */
 .fixed.bottom-4.left-14,
-[class*="fixed"][class*="bottom-"] {
-    min-width: 280px !important;
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1) !important;
+[class*="fixed"][class*="bottom-"],
+.custom-portal-modal {
+    min-width: 220px !important;
+    max-width: 240px !important;
+    left: 10px !important;
+    bottom: 60px !important;
+    padding: 10px !important;
+    font-size: 13px !important;
+    z-index: 999999 !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2) !important;
 }
 
-/* 确保笔记列表在大容器里不会溢出干扰 */
+/* 缩小弹窗内的具体内容间距 */
+.custom-portal-modal div,
+.custom-portal-modal span,
+.custom-portal-modal p,
+.custom-portal-modal .flex {
+    padding-top: 2px !important;
+    padding-bottom: 2px !important;
+    margin-bottom: 2px !important;
+}
+
+/* 确保笔记列表在视觉上层级较低 */
 .note-list-container,
 #root>div>div>div:nth-child(2) {
-    z-index: 10 !important;
+    z-index: 5 !important;
 }
 
-/* 之前卡片设置了 position: relative，这里确保它不会抢占过高层级 */
+/* 之前卡片设置了 position: relative，这里确保它低层级 */
 .note-item {
     z-index: 1 !important;
 }
