@@ -1,5 +1,5 @@
 /* XA Note Ultimate Refresh - Compact Edition */
-/* Build: 2026-02-12-v1.1.2 | Cache-Busting: 1770861736629 */
+/* Build: 2026-02-12-v1.1.3 | Cache-Busting: 1770861736629 */
 
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
 
@@ -28,27 +28,14 @@ aside,
     border-radius: 12px !important;
     background: white !important;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
-    transition: all 0.3s ease !important;
+    transition: all 0.2s ease !important;
     z-index: 1 !important;
     border-left: 4px solid transparent !important;
-    /* 基础边框占位 */
 }
 
 .note-item:hover {
     transform: translateY(-2px) !important;
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
-}
-
-/* 选中态修复：当卡片被选中时（通常会有特定的背景或边框），强制回归白色 */
-/* 这里的选择器尝试覆盖常见的 Tailwind 选中态特征 */
-.note-item[class*="bg-blue"],
-.note-item[class*="border-blue"],
-.note-item[style*="background-color"],
-.note-item.active {
-    background: white !important;
-    background-image: none !important;
-    border-left: 4px solid #3b82f6 !important;
-    /* 选中的蓝色边框 */
 }
 
 /* Modal Stacking & Portal Redesign */
@@ -121,35 +108,46 @@ button:active {
 }
 
 /* --- 笔记色彩方案 (Ultra-Pastel 2.0) --- */
-/* 极淡色彩，从左向右渐变 */
-.note-variant-1:not([class*="bg-blue"]):not(.active) {
+/* 这里定义基础颜色，注意不要用 :not()，靠下方更具体的选中态样式来覆盖 */
+.note-variant-1 {
     background: linear-gradient(to right, #f8fbff 0%, #eef6ff 100%) !important;
     border-left: 4px solid #3b82f6 !important;
 }
 
-.note-variant-2:not([class*="bg-blue"]):not(.active) {
+.note-variant-2 {
     background: linear-gradient(to right, #f9fefb 0%, #f0fdf4 100%) !important;
     border-left: 4px solid #22c55e !important;
 }
 
-.note-variant-3:not([class*="bg-blue"]):not(.active) {
+.note-variant-3 {
     background: linear-gradient(to right, #fbfaff 0%, #f5f3ff 100%) !important;
     border-left: 4px solid #8b5cf6 !important;
 }
 
-.note-variant-4:not([class*="bg-blue"]):not(.active) {
+.note-variant-4 {
     background: linear-gradient(to right, #fffbff 0%, #fdf2f8 100%) !important;
     border-left: 4px solid #ec4899 !important;
 }
 
-.note-variant-5:not([class*="bg-blue"]):not(.active) {
+.note-variant-5 {
     background: linear-gradient(to right, #fffefc 0%, #fffbeb 100%) !important;
     border-left: 4px solid #f59e0b !important;
 }
 
-.note-variant-6:not([class*="bg-blue"]):not(.active) {
+.note-variant-6 {
     background: linear-gradient(to right, #faffff 0%, #f0fdfa 100%) !important;
     border-left: 4px solid #14b8a6 !important;
+}
+
+/* 选中态修复：放在变体样式之后，利用 CSS 顺序优势 */
+/* 只有当元素具有代表“选中”的特征时，才强制变白 */
+.note-item.active,
+.note-item[class*="border-blue-"],
+.note-item[class*="ring-"],
+.note-item[class*="shadow-outline"] {
+    background: white !important;
+    background-image: none !important;
+    border-left: 4px solid #3b82f6 !important;
 }
 
 @keyframes loading {

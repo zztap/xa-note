@@ -264,7 +264,7 @@
       setInterval(teleportModals, 200); // 200ms 检查一次
     })();
 
-    // 笔记卡片彩色化脚本 (Stable Pastel Colors)
+    // 笔记卡片彩色化脚本 (Stable & Persistent Pastel Colors)
     (function () {
       function getHash(str) {
         let hash = 0;
@@ -276,19 +276,27 @@
       }
 
       function applyStableColors() {
-        const cards = document.querySelectorAll('.note-item:not([data-colored]), .note-list-item:not([data-colored])');
+        const cards = document.querySelectorAll('.note-item, .note-list-item');
         cards.forEach(card => {
-          const content = card.innerText || card.textContent || '';
-          const hash = getHash(content.substring(0, 20));
-          const variant = (hash % 6) + 1;
-
-          card.classList.add(`note-variant-${variant}`);
-          card.setAttribute('data-colored', 'true');
+          // 检查是否已经分配过变体类名，如果没有则根据内容分配
+          const hasVariant = Array.from(card.classList).some(c => c.startsWith('note-variant-'));
+          if (!hasVariant) {
+            const content = card.innerText || card.textContent || '';
+            const hash = getHash(content.substring(0, 30));
+            const variant = (hash % 6) + 1;
+            card.classList.add(`note-variant-${variant}`);
+          }
         });
       }
 
+      // 监视：不仅监测子节点，还监测类名变化 (比如选中/取消选中时 class 的变动)
       const colorObserver = new MutationObserver(() => applyStableColors());
-      colorObserver.observe(document.body, { childList: true, subtree: true });
+      colorObserver.observe(document.body, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ['class']
+      });
 
       applyStableColors();
       setInterval(applyStableColors, 1000);
