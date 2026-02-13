@@ -339,6 +339,40 @@
       }
     }, true); // 必须开启捕获(capture)才能监听到 error 事件
 
+    // 头像源自动迁移脚本 (Auto-Migrate to Cravatar)
+    // 检测当前配置是否仍为 Gravatar，如果是，则自动修正为 Cravatar
+    (async function migrateAvatarSource() {
+      try {
+        // 1. 获取当前设置
+        const res = await fetch('/api/settings/public');
+        const settings = await res.json();
+
+        // 2. 检查是否需要迁移
+        const currentPrefix = settings['site.avatar_prefix'];
+        if (currentPrefix && currentPrefix.includes('gravatar.com')) {
+          console.log('Detecting legacy Gravatar setting, migrating to Cravatar...');
+
+          // 3. 执行更新 (尝试调用 update 接口)
+          // 注意：此接口通常需要登录态。如果当前用户未登录，此操作将失败（静默失败即可，下次管理员登录时会再次触发）
+          const updateRes = await fetch('/api/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              'site.avatar_prefix': 'https://www.cravatar.cn/avatar/'
+            })
+          });
+
+          if (updateRes.ok) {
+            console.log('Avatar source successfully migrated to Cravatar.cn');
+            // 可选：提示用户刷新
+            // alert('系统配置已优化，请刷新页面以应用最新的头像源。');
+          }
+        }
+      } catch (e) {
+        console.warn('Avatar migration check failed:', e);
+      }
+    })();
+
   </script>
 </body>
 

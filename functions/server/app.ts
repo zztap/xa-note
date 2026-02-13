@@ -970,7 +970,7 @@ function getDefaultValue(key: string): string {
     'site.title': 'XA Note',
     'site.logo': '/logo.png',
     'site.favicon': '/favicon.png',
-    'site.avatar_prefix': 'https://www.gravatar.com/avatar/',
+    'site.avatar_prefix': 'https://www.cravatar.cn/avatar/',
     'upload.max_file_size': '10'
   }
   return defaults[key] || ''
