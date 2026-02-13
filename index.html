@@ -339,6 +339,42 @@
       }
     }, true); // 必须开启捕获(capture)才能监听到 error 事件
 
+    // ☢️ 核弹级域名重写 (Aggressive Avatar URL Rewriter)
+    // 不管后端或前端存了什么，只要 DOM 里出现 gravatar.com，强制替换为 cravatar.cn
+    (function aggressiveAvatarRedirect() {
+      const replaceSrc = (img) => {
+        if (img.src && img.src.includes('gravatar.com')) {
+          // 保留 hash 和参数，只替换域名
+          const newSrc = img.src.replace('gravatar.com', 'cravatar.cn');
+          img.src = newSrc;
+          // 标记已处理，防止反复触发（虽然 src 变了自然不再包含 gravatar）
+          img.dataset.fixed = 'true';
+        }
+      };
+
+      // 1. 扫描现有图片
+      document.querySelectorAll('img').forEach(replaceSrc);
+
+      // 2. 及其霸道地监听所有新图片
+      new MutationObserver((mutations) => {
+        mutations.forEach(m => {
+          m.addedNodes.forEach(node => {
+            if (node.nodeName === 'IMG') replaceSrc(node);
+            if (node.querySelectorAll) node.querySelectorAll('img').forEach(replaceSrc);
+          });
+          // 同时也监听属性变化 (如 React 重新渲染导致 src 变化)
+          if (m.type === 'attributes' && m.target.nodeName === 'IMG') {
+            replaceSrc(m.target);
+          }
+        });
+      }).observe(document.body, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ['src']
+      });
+    })();
+
     // 头像源自动迁移脚本 (Auto-Migrate to Cravatar)
     // 检测当前配置是否仍为 Gravatar，如果是，则自动修正为 Cravatar
     (async function migrateAvatarSource() {
