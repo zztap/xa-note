@@ -339,73 +339,63 @@
       }
     }, true); // 必须开启捕获(capture)才能监听到 error 事件
 
-    // ☢️ 核弹级域名重写 (Aggressive Avatar URL Rewriter)
-    // 强制将所有 Gravatar/Cravatar 头像重定向至用户自己的 GitHub 仓库图片
-    (function aggressiveAvatarRedirect() {
-      const GITHUB_AVATAR = 'https://cdn.jsdelivr.net/gh/zztap/xa-note/avatar.png';
+    // ☢️ 超强力头像重定向 (Ultra-Aggressive Avatar Re-Router)
+    (function ultraAggressiveAvatarFix() {
+      const TARGET_AVATAR = 'https://cdn.jsdelivr.net/gh/zztap/xa-note/avatar.png';
 
-      const replaceSrc = (img) => {
-        if (img.src && (img.src.includes('gravatar.com') || img.src.includes('cravatar.cn'))) {
-          // 不管它是啥哈希，全部定向到 zztap 的专用头像
-          img.src = GITHUB_AVATAR;
-          img.dataset.fixed = 'true';
+      const fixImg = (img) => {
+        if (!img || !img.src) return;
+        const src = img.src;
+        // 匹配所有 Gravatar 或 Cravatar 链接
+        if (src.includes('gravatar.com') || src.includes('cravatar.cn')) {
+          if (img.src !== TARGET_AVATAR) {
+            console.log('🔄 重定向头像链接:', src, '->', TARGET_AVATAR);
+            img.src = TARGET_AVATAR;
+            img.removeAttribute('srcset'); // 清除响应式源
+            img.dataset.manualFixed = '1';
+          }
         }
       };
 
-      // 1. 扫描现有图片
-      document.querySelectorAll('img').forEach(replaceSrc);
+      // 1. 深度扫描既有图片
+      const scan = () => document.querySelectorAll('img').forEach(fixImg);
+      scan();
 
-      // 2. 及其霸道地监听所有新图片
-      new MutationObserver((mutations) => {
+      // 2. 强力监听 DOM 变化 (属性 + 节点增加)
+      const observer = new MutationObserver((mutations) => {
         mutations.forEach(m => {
-          m.addedNodes.forEach(node => {
-            if (node.nodeName === 'IMG') replaceSrc(node);
-            if (node.querySelectorAll) node.querySelectorAll('img').forEach(replaceSrc);
+          if (m.addedNodes) m.addedNodes.forEach(node => {
+            if (node.tagName === 'IMG') fixImg(node);
+            else if (node.querySelectorAll) node.querySelectorAll('img').forEach(fixImg);
           });
-          // 同时也监听属性变化 (如 React 重新渲染导致 src 变化)
-          if (m.type === 'attributes' && m.target.nodeName === 'IMG') {
-            replaceSrc(m.target);
-          }
+          if (m.type === 'attributes' && m.target.tagName === 'IMG') fixImg(m.target);
         });
-      }).observe(document.body, {
-        childList: true,
-        subtree: true,
-        attributes: true,
-        attributeFilter: ['src']
       });
+      observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['src'] });
+
+      // 3. 最后防线：每隔 1.5 秒扫一次 (对抗 React 高频强制更新)
+      setInterval(scan, 1500);
     })();
 
-    // 头像源自动迁移脚本 (Auto-Migrate to Cravatar)
-    // 检测当前配置是否仍为 Gravatar，如果是，则自动修正为 Cravatar
-    (async function migrateAvatarSource() {
+    // 🔄 数据库配置自动修正 (Auto-Config Migration to GitHub)
+    (async function migrateConfig() {
       try {
-        // 1. 获取当前设置
+        const GITHUB_PREFIX = 'https://cdn.jsdelivr.net/gh/zztap/xa-note/avatar.png#';
         const res = await fetch('/api/settings/public');
         const settings = await res.json();
+        const current = settings['site.avatar_prefix'];
 
-        // 2. 检查是否需要迁移
-        const currentPrefix = settings['site.avatar_prefix'];
-        if (currentPrefix && currentPrefix.includes('gravatar.com')) {
-          console.log('Detecting legacy Gravatar setting, migrating to Cravatar...');
-
-          // 3. 执行更新 (尝试调用 update 接口)
-          // 注意：此接口通常需要登录态。如果当前用户未登录，此操作将失败（静默失败即可，下次管理员登录时会再次触发）
-          const updateRes = await fetch('/api/settings', {
+        // 如果当前还是常规镜像站，则自动修正为 GitHub 直接链接（配合 # 锚点屏蔽后缀）
+        if (current && !current.includes('github')) {
+          console.log('📦 正在将数据库头像源修正为 GitHub...');
+          await fetch('/api/settings', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              'site.avatar_prefix': 'https://www.cravatar.cn/avatar/'
-            })
+            body: JSON.stringify({ 'site.avatar_prefix': GITHUB_PREFIX })
           });
-
-          if (updateRes.ok) {
-            console.log('Avatar source successfully migrated to Cravatar.cn');
-            // 可选：提示用户刷新
-            // alert('系统配置已优化，请刷新页面以应用最新的头像源。');
-          }
         }
       } catch (e) {
-        console.warn('Avatar migration check failed:', e);
+        console.warn('Config migration failed:', e);
       }
     })();
 

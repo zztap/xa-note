@@ -955,7 +955,7 @@ app.get('/api/settings/public', async (c) => {
       'site.title': 'XA Note',
       'site.logo': '/logo.png',
       'site.favicon': '/favicon.png',
-      'site.avatar_prefix': 'https://www.cravatar.cn/avatar/',
+      'site.avatar_prefix': 'https://cdn.jsdelivr.net/gh/zztap/xa-note/avatar.png#',
       'upload.max_file_size': '10'
     })
   }
@@ -970,7 +970,7 @@ function getDefaultValue(key: string): string {
     'site.title': 'XA Note',
     'site.logo': '/logo.png',
     'site.favicon': '/favicon.png',
-    'site.avatar_prefix': 'https://www.cravatar.cn/avatar/',
+    'site.avatar_prefix': 'https://cdn.jsdelivr.net/gh/zztap/xa-note/avatar.png#',
     'upload.max_file_size': '10'
   }
   return defaults[key] || ''
