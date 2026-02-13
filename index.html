@@ -318,6 +318,27 @@
       applyStableColors();
       setInterval(applyStableColors, 1500);
     })();
+
+    // 强力头像防裂补丁 (Avatar Auto-Fallback)
+    // 监听全局图片加载错误，自动替换为本地 Logo
+    window.addEventListener('error', (e) => {
+      const target = e.target;
+      if (target && target.tagName === 'IMG') {
+        const src = target.src || '';
+        // 仅针对头像相关的图片进行处理
+        if (src.includes('gravatar.com') || src.includes('cravatar.cn') || target.alt?.toLowerCase().includes('avatar')) {
+          // 防止死循环
+          if (src.includes('/logo.png')) return;
+
+          console.warn('Avatar load failed, falling back to local logo.', src);
+          target.removeAttribute('srcset'); // 清除响应式源
+          target.src = '/logo.png';
+          target.onerror = null; // 清除内联错误处理
+          target.style.backgroundColor = '#f0f9ff'; // 增加淡蓝背景
+        }
+      }
+    }, true); // 必须开启捕获(capture)才能监听到 error 事件
+
   </script>
 </body>
 
