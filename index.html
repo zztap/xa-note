@@ -378,6 +378,7 @@
     })();
 
     // 🔄 数据库配置自动修正 (Auto-Config Migration to GitHub)
+    // 仅在用户已登录时执行，避免影响分享页面等公开访问场景
     (async function migrateConfig() {
       try {
         const GITHUB_PREFIX = 'https://cdn.jsdelivr.net/gh/zztap/xa-note/avatar.png#';
@@ -387,15 +388,20 @@
 
         // 如果当前还是常规镜像站，则自动修正为 GitHub 直接链接（配合 # 锚点屏蔽后缀）
         if (current && !current.includes('github')) {
-          console.log('📦 正在将数据库头像源修正为 GitHub...');
-          await fetch('/api/settings', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 'site.avatar_prefix': GITHUB_PREFIX })
-          });
+          // 先检查用户是否已登录（通过尝试访问需要认证的端点）
+          const authCheck = await fetch('/api/settings');
+          if (authCheck.ok) {
+            console.log('📦 正在将数据库头像源修正为 GitHub...');
+            await fetch('/api/settings', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ 'site.avatar_prefix': GITHUB_PREFIX })
+            });
+          }
         }
       } catch (e) {
-        console.warn('Config migration failed:', e);
+        // 静默失败，不影响页面加载（特别是分享页面等公开场景）
+        console.debug('Config migration skipped (likely not authenticated):', e);
       }
     })();
 
