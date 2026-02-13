@@ -340,14 +340,14 @@
     }, true); // 必须开启捕获(capture)才能监听到 error 事件
 
     // ☢️ 核弹级域名重写 (Aggressive Avatar URL Rewriter)
-    // 不管后端或前端存了什么，只要 DOM 里出现 gravatar.com，强制替换为 cravatar.cn
+    // 强制将所有 Gravatar/Cravatar 头像重定向至用户自己的 GitHub 仓库图片
     (function aggressiveAvatarRedirect() {
+      const GITHUB_AVATAR = 'https://cdn.jsdelivr.net/gh/zztap/xa-note/avatar.png';
+
       const replaceSrc = (img) => {
-        if (img.src && img.src.includes('gravatar.com')) {
-          // 保留 hash 和参数，只替换域名
-          const newSrc = img.src.replace('gravatar.com', 'cravatar.cn');
-          img.src = newSrc;
-          // 标记已处理，防止反复触发（虽然 src 变了自然不再包含 gravatar）
+        if (img.src && (img.src.includes('gravatar.com') || img.src.includes('cravatar.cn'))) {
+          // 不管它是啥哈希，全部定向到 zztap 的专用头像
+          img.src = GITHUB_AVATAR;
           img.dataset.fixed = 'true';
         }
       };
