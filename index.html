@@ -247,35 +247,7 @@
       }
     }, true); // 使用捕获阶段以获得最高优先权
 
-    // 弹窗“传送门”修复脚本 (解决侧边栏裁剪问题)
-    (function () {
-      function teleportModals() {
-        // 寻找侧边栏内部的固定定位弹窗 (快捷键面板等)
-        const sidebar = document.querySelector('aside, .w-64');
-        if (!sidebar) return;
 
-        const floatingModals = sidebar.querySelectorAll('.fixed, [class*="fixed"]');
-        floatingModals.forEach(modal => {
-          // 只搬运那些需要完整显示的面板
-          if (modal.textContent.includes('快捷键') || modal.classList.contains('shadow-lg')) {
-            if (modal.parentElement !== document.body) {
-              modal.classList.add('custom-portal-modal'); // 标记类名，供 CSS 增强 z-index
-              document.body.appendChild(modal);
-              console.log('Modal teleported to body.');
-            }
-          }
-        });
-      }
-
-      // 监视器：持续盯着 DOM，一旦弹窗被创建就搬走
-      const portalObserver = new MutationObserver((mutations) => {
-        teleportModals();
-      });
-      portalObserver.observe(document.body, { childList: true, subtree: true });
-
-      // 增加轮询频率
-      setInterval(teleportModals, 200); // 200ms 检查一次
-    })();
 
     // 笔记卡片彩色化脚本 (Stable & Neighbor-Aware Pastel Colors)
     (function () {
