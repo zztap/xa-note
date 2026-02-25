@@ -21,9 +21,9 @@
       const originalRoot = document.querySelector('#root');
       if (originalRoot) originalRoot.remove();
 
-      // 建立属于我们自己的绝对领域
+      // 建立属于我们自己的绝对领域，避开广告拦截器拦截带有 share 关键词的 ID
       const container = document.createElement('div');
-      container.id = 'share-container';
+      container.id = 'xa-note-view-root';
       document.body.appendChild(container);
 
       container.innerHTML = `
