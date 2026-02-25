@@ -167,6 +167,13 @@ button:active {
     z-index: 99999;
 }
 
+#loader {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
 #loader-wrapper.loaded {
     opacity: 0;
     visibility: hidden;
