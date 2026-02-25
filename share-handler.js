@@ -1,4 +1,4 @@
-﻿(function () {
+(function () {
   const path = window.location.pathname;
   const shareMatch = path.match(/^\/share\/([a-zA-Z0-9_-]+)$/);
 
