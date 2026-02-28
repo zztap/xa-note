@@ -456,6 +456,45 @@
       }, 2000);
     })();
 
+    // 🔐 登录表单自动填充修复器 (Login Auto-fill Fixer) [C1]
+    // 为 React 异步生成的登录表单补齐 name, action 和 autocomplete 属性
+    (function () {
+      const fixForm = () => {
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+
+        if (emailInput && !emailInput.name) {
+          emailInput.name = 'email';
+          emailInput.autocomplete = 'username';
+        }
+
+        if (passwordInput && !passwordInput.name) {
+          passwordInput.name = 'password';
+          passwordInput.autocomplete = 'current-password';
+        }
+
+        // 寻找父级 form 并补齐 action 以触发浏览器“保存密码”提示
+        const form = emailInput?.closest('form');
+        if (form && !form.action) {
+          form.action = 'javascript:void(0)';
+          // 确保表单提交时浏览器能感知
+          if (form.method === 'get') form.method = 'post';
+        }
+      };
+
+      // 实时监听 DOM，防止 React 重新渲染抹除我们的改动
+      const observer = new MutationObserver((mutations) => {
+        mutations.forEach(m => {
+          if (m.addedNodes.length || (m.target && m.target.id === 'root')) fixForm();
+        });
+      });
+
+      observer.observe(document.body, { childList: true, subtree: true });
+
+      // 保底扫描
+      setInterval(fixForm, 2000);
+    })();
+
     // 头像源自动迁移脚本 (Auto-Migrate to GitHub Static Avatar)
     (async function migrateAvatarSource() {
       const GITHUB_AVATAR = 'https://raw.githubusercontent.com/zztap/xa-note/main/avatar.png#';
