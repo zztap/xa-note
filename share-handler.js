@@ -73,19 +73,23 @@
         }
 
         container.innerHTML = `
-          <div style="min-height: 100vh; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 2rem;">
-            <div style="max-width: 800px; margin: 0 auto; background: white; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); overflow: hidden;">
-              <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 2rem; color: white;">
-                <h1 style="margin: 0; font-size: 2rem; font-weight: 600;">${note.title || 'Untitled Note'}</h1>
-                <div style="margin-top: 0.5rem; opacity: 0.9; font-size: 0.9rem;">
-                  📤 Shared Note • Created: ${new Date(note.created_at).toLocaleDateString()}
+          <div style="min-height: 100vh; background: #f9fafb; padding: 2rem; font-family: 'Inter', system-ui, -apple-system, sans-serif;">
+            <div style="max-width: 820px; margin: 0 auto; background: white; border-radius: 12px; border: 1px solid #e5e7eb; box-shadow: 0 4px 20px rgba(0,0,0,0.03); overflow: hidden;">
+              <div style="padding: 2.5rem 2.5rem 1.5rem 2.5rem; border-bottom: 1px solid #f3f4f6; position: relative;">
+                <!-- 侧边马卡龙装饰条 -->
+                <div style="position: absolute; left: 0; top: 2.5rem; height: 2.5rem; width: 4px; background: #818cf8; border-radius: 0 4px 4px 0;"></div>
+                <h1 style="margin: 0; font-size: 1.875rem; font-weight: 700; color: #111827; letter-spacing: -0.025em;">${note.title || 'Untitled Note'}</h1>
+                <div style="margin-top: 0.75rem; color: #6b7280; font-size: 0.875rem; display: flex; align-items: center; gap: 0.5rem;">
+                  <span style="background: #eff6ff; color: #3b82f6; padding: 2px 8px; border-radius: 4px; font-weight: 500; font-size: 0.75rem;">Shared Note</span>
+                  <span style="color: #d1d5db;">•</span>
+                  <span>Created: ${new Date(note.created_at).toLocaleDateString()}</span>
                 </div>
               </div>
-              <div style="padding: 2rem;">
-                <div id="note-content" style="line-height: 1.8; color: #333; font-size: 1rem; font-family: 'Outfit', -apple-system, sans-serif;"></div>
+              <div style="padding: 2.5rem;">
+                <div id="note-content" style="line-height: 1.8; color: #374151; font-size: 1.05rem;"></div>
               </div>
-              <div style="padding: 1.5rem 2rem; background: #f8f9fa; border-top: 1px solid #e9ecef; text-align: center; color: #666; font-size: 0.875rem;">
-                Powered by <strong>XA Note</strong>
+              <div style="padding: 1.5rem 2.5rem; background: #ffffff; border-top: 1px solid #f3f4f6; text-align: center; color: #9ca3af; font-size: 0.75rem; letter-spacing: 0.05em;">
+                Powered by <strong style="color: #4b5563;">XA Note</strong>
               </div>
             </div>
           </div>
