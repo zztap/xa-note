@@ -140,33 +140,61 @@
 
   <script>
     /**
-     * API 请求去重与合并拦截器 (Fetch Deduplicator)
-     * 解决首屏加载时大量冗余的 /api/shares 请求
+     * XA Note 极速启动截流器 (Fetch Deduplicator & Turbo Prefetch)
+     * 1. 自动合并冗余的 /api/shares 请求
+     * 2. 对关键路径 API（设置、笔记、分类）执行并行抢跑，消除瀑布流延迟
      */
     (function () {
       const originalFetch = window.fetch;
-      const pendingRequests = new Map();
+      const memo = new Map();
+
+      // 定义需要抢跑的“黄金”接口
+      const turboEndpoints = [
+        '/api/settings/public',
+        '/api/notes',
+        '/api/categories',
+        '/api/settings' // 针对已登录用户的完整设置
+      ];
+
+      // 立即抢跑：在 JS 引擎空闲的第一时间发起请求
+      turboEndpoints.forEach(url => {
+        memo.set(url, originalFetch(url).catch(e => {
+          memo.delete(url); // 失败则移除，允许 React 稍后重试
+          throw e;
+        }));
+      });
 
       window.fetch = function (...args) {
-        const url = typeof args[0] === 'string' ? args[0] : args[0].url;
+        let url = typeof args[0] === 'string' ? args[0] : args[0].url;
 
-        // 仅拦截执行 note_id 查询的 GET 分享请求
-        if (url.includes('/api/shares?note_id=') && (!args[1] || args[1].method === 'GET' || !args[1].method)) {
-          if (pendingRequests.has(url)) {
-            return pendingRequests.get(url).then(res => res.clone());
+        // 规范化 URL (处理相对路径和前缀)
+        if (url.startsWith('/api')) {
+          const pureUrl = url.split('?')[0];
+
+          // 场景 A: 命中了抢跑逻辑的黄金接口
+          if (turboEndpoints.includes(pureUrl) && (!args[1] || args[1].method === 'GET' || !args[1].method)) {
+            // 注意：/api/notes 等带参数的请求不直接复用无参数抢跑结果，除非精确匹配
+            if (memo.has(url)) {
+              return memo.get(url).then(res => res.clone());
+            }
           }
 
-          const promise = originalFetch.apply(this, args).then(response => {
-            // 请求完成后从 Map 中移除
-            setTimeout(() => pendingRequests.delete(url), 100);
-            return response;
-          }).catch(err => {
-            pendingRequests.delete(url);
-            throw err;
-          });
+          // 场景 B: 针对 /api/shares?note_id=... 的去重合并
+          if (url.includes('/api/shares?note_id=') && (!args[1] || args[1].method === 'GET' || !args[1].method)) {
+            if (memo.has(url)) {
+              return memo.get(url).then(res => res.clone());
+            }
 
-          pendingRequests.set(url, promise);
-          return promise.then(res => res.clone());
+            const promise = originalFetch.apply(this, args).then(response => {
+              setTimeout(() => memo.delete(url), 100);
+              return response;
+            }).catch(err => {
+              memo.delete(url);
+              throw err;
+            });
+            memo.set(url, promise);
+            return promise.then(res => res.clone());
+          }
         }
 
         return originalFetch.apply(this, args);
