@@ -139,6 +139,40 @@
   <div id="root"></div>
 
   <script>
+    /**
+     * API 请求去重与合并拦截器 (Fetch Deduplicator)
+     * 解决首屏加载时大量冗余的 /api/shares 请求
+     */
+    (function () {
+      const originalFetch = window.fetch;
+      const pendingRequests = new Map();
+
+      window.fetch = function (...args) {
+        const url = typeof args[0] === 'string' ? args[0] : args[0].url;
+
+        // 仅拦截执行 note_id 查询的 GET 分享请求
+        if (url.includes('/api/shares?note_id=') && (!args[1] || args[1].method === 'GET' || !args[1].method)) {
+          if (pendingRequests.has(url)) {
+            return pendingRequests.get(url).then(res => res.clone());
+          }
+
+          const promise = originalFetch.apply(this, args).then(response => {
+            // 请求完成后从 Map 中移除
+            setTimeout(() => pendingRequests.delete(url), 100);
+            return response;
+          }).catch(err => {
+            pendingRequests.delete(url);
+            throw err;
+          });
+
+          pendingRequests.set(url, promise);
+          return promise.then(res => res.clone());
+        }
+
+        return originalFetch.apply(this, args);
+      };
+    })();
+
     // 响应式隐藏启动页 (检测目标：#root 挂载内容)
     const splashObserver = new MutationObserver(() => {
       const root = document.getElementById('root');
