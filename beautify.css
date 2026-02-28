@@ -66,35 +66,66 @@ aside,
     box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15) !important;
 }
 
-/* --- 超淡雅彩色变体 --- */
+/* --- 高级莫兰迪艺术彩色变体 (Morandi Art Palette) --- */
 .note-variant-1 {
-    background: linear-gradient(to right, #fcfdff 0%, #edf4ff 100%) !important;
-    border-left-color: #3b82f61a !important;
+    background: linear-gradient(135deg, #f8f9ff 0%, #eef2ff 100%) !important;
+    border-left: 5px solid #818cf8 !important;
+    box-shadow: 0 4px 15px -3px rgba(129, 140, 248, 0.15) !important;
 }
 
 .note-variant-2 {
-    background: linear-gradient(to right, #fdfffe 0%, #effff6 100%) !important;
-    border-left-color: #22c55e1a !important;
+    background: linear-gradient(135deg, #f7fffb 0%, #ecfdf5 100%) !important;
+    border-left: 5px solid #34d399 !important;
+    box-shadow: 0 4px 15px -3px rgba(52, 211, 153, 0.15) !important;
 }
 
 .note-variant-3 {
-    background: linear-gradient(to right, #fefeff 0%, #f6f4ff 100%) !important;
-    border-left-color: #8b5cf61a !important;
+    background: linear-gradient(135deg, #faf9ff 0%, #f5f3ff 100%) !important;
+    border-left: 5px solid #a78bfa !important;
+    box-shadow: 0 4px 15px -3px rgba(167, 139, 250, 0.15) !important;
 }
 
 .note-variant-4 {
-    background: linear-gradient(to right, #fffefe 0%, #fff4f8 100%) !important;
-    border-left-color: #ec48991a !important;
+    background: linear-gradient(135deg, #fffafc 0%, #fdf2f8 100%) !important;
+    border-left: 5px solid #f472b6 !important;
+    box-shadow: 0 4px 15px -3px rgba(244, 114, 182, 0.15) !important;
 }
 
 .note-variant-5 {
-    background: linear-gradient(to right, #fffefd 0%, #fffbf2 100%) !important;
-    border-left-color: #f59e0b1a !important;
+    background: linear-gradient(135deg, #fffcf6 0%, #fef3c7 60%) !important;
+    border-left: 5px solid #fbbf24 !important;
+    box-shadow: 0 4px 15px -3px rgba(251, 191, 36, 0.15) !important;
 }
 
 .note-variant-6 {
-    background: linear-gradient(to right, #f0fdfa 0%, #f2ffff 100%) !important;
-    border-left-color: #14b8a61a !important;
+    background: linear-gradient(135deg, #f5fefe 0%, #ecfeff 100%) !important;
+    border-left: 5px solid #22d3ee !important;
+    box-shadow: 0 4px 15px -3px rgba(34, 211, 238, 0.15) !important;
+}
+
+/* 悬浮时强化投影 */
+.note-variant-1:hover {
+    box-shadow: 0 10px 20px -5px rgba(129, 140, 248, 0.3) !important;
+}
+
+.note-variant-2:hover {
+    box-shadow: 0 10px 20px -5px rgba(52, 211, 153, 0.3) !important;
+}
+
+.note-variant-3:hover {
+    box-shadow: 0 10px 20px -5px rgba(167, 139, 250, 0.3) !important;
+}
+
+.note-variant-4:hover {
+    box-shadow: 0 10px 20px -5px rgba(244, 114, 182, 0.3) !important;
+}
+
+.note-variant-5:hover {
+    box-shadow: 0 10px 20px -5px rgba(251, 191, 36, 0.3) !important;
+}
+
+.note-variant-6:hover {
+    box-shadow: 0 10px 20px -5px rgba(34, 211, 238, 0.3) !important;
 }
 
 /* Modal & Portal Styling */
