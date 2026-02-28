@@ -166,21 +166,32 @@
 
       window.fetch = function (...args) {
         let url = typeof args[0] === 'string' ? args[0] : args[0].url;
+        const options = args[1] || {};
+        const method = (options.method || 'GET').toUpperCase();
+
+        // 核心：如果发起任何非 GET 请求 (POST/PUT/DELETE)，立即清空缓存，确保后续读取的是最新数据
+        if (url.startsWith('/api') && method !== 'GET') {
+          console.log('🔄 Mutation detected, clearing cache:', method, url);
+          memo.clear();
+        }
 
         // 规范化 URL (处理相对路径和前缀)
         if (url.startsWith('/api')) {
           const pureUrl = url.split('?')[0];
 
           // 场景 A: 命中了抢跑逻辑的黄金接口
-          if (turboEndpoints.includes(pureUrl) && (!args[1] || args[1].method === 'GET' || !args[1].method)) {
+          if (turboEndpoints.includes(pureUrl) && method === 'GET') {
             // 注意：/api/notes 等带参数的请求不直接复用无参数抢跑结果，除非精确匹配
             if (memo.has(url)) {
-              return memo.get(url).then(res => res.clone());
+              const promise = memo.get(url);
+              // 重要：抢跑缓存仅限“一次性”使用，使用后即刻销毁，回归网络请求，修正 UI 同步问题
+              memo.delete(url);
+              return promise.then(res => res.clone());
             }
           }
 
           // 场景 B: 针对 /api/shares?note_id=... 的去重合并
-          if (url.includes('/api/shares?note_id=') && (!args[1] || args[1].method === 'GET' || !args[1].method)) {
+          if (url.includes('/api/shares?note_id=') && method === 'GET') {
             if (memo.has(url)) {
               return memo.get(url).then(res => res.clone());
             }
