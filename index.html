@@ -419,6 +419,43 @@
       });
     })();
 
+    // 🚀 笔记预览脱敏拦截器 (Note Preview Sanitizer) [B3]
+    // 自动剥离列表摘要中残存的 HTML 标签，保持侧边栏纯净
+    (function () {
+      const sanitize = (el) => {
+        // 如果已经处理过，或者没有内容，则跳过
+        if (el.dataset.sanitized === 'true') return;
+        const raw = el.textContent || "";
+        // 核心检测：如果包含 HTML 特征符号，则执行清洗
+        if (raw.includes('<') || raw.includes('>')) {
+          // 使用正则剥离所有标签，并将多个空格合并
+          const clean = raw.replace(/<\/?[^>]+(>|$)/g, "").replace(/\s+/g, " ").trim();
+          el.textContent = clean;
+          el.dataset.sanitized = 'true';
+        }
+      };
+
+      // 使用 MutationObserver 监听列表变动 (处理 React 动态渲染)
+      const observer = new MutationObserver((mutations) => {
+        mutations.forEach(m => {
+          m.addedNodes.forEach(node => {
+            if (node.nodeType === 1) {
+              // 匹配侧边栏笔记摘要的特定的 P 标签样式
+              if (node.matches && node.matches('.note-item p')) sanitize(node);
+              node.querySelectorAll?.('.note-item p').forEach(sanitize);
+            }
+          });
+        });
+      });
+
+      observer.observe(document.body, { childList: true, subtree: true });
+
+      // 定期保底扫描 (应对某些复杂的 React 状态重置)
+      setInterval(() => {
+        document.querySelectorAll('.note-item p').forEach(sanitize);
+      }, 2000);
+    })();
+
     // 头像源自动迁移脚本 (Auto-Migrate to GitHub Static Avatar)
     (async function migrateAvatarSource() {
       const GITHUB_AVATAR = 'https://raw.githubusercontent.com/zztap/xa-note/main/avatar.png#';
