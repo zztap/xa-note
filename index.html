@@ -58,7 +58,7 @@
 
   <!-- 核心资源极速预加载 -->
   <link rel="preload" href="/assets/index-CfJzE6qT.js" as="script" crossorigin="anonymous" />
-  <link rel="preload" href="/assets/index-Czj62kEc.css" as="style" />
+  <link rel="preload" href="/assets/index-Czj62kEc.css" as="style" crossorigin />
   <link rel="preload" href="/beautify.css" as="style" />
 
   <!-- 结构化数据 -->
@@ -101,11 +101,6 @@
   <meta http-equiv="X-XSS-Protection" content="1; mode=block" />
   <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin" />
 
-  <!-- 缓存控制 -->
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-  <meta http-equiv="Pragma" content="no-cache" />
-  <meta http-equiv="Expires" content="0" />
-
   <!-- XA Note Share Page Handler -->
   <!-- MUST be before the React module script to prevent React from loading on share pages -->
   <script src="/share-handler.js?v=3"></script>
@@ -144,27 +139,29 @@
   <div id="root"></div>
 
   <script>
-    // 渐进式隐藏启动页
-    window.addEventListener('load', () => {
+    // 响应式隐藏启动页 (检测目标：#root 挂载内容)
+    const splashObserver = new MutationObserver(() => {
+      const root = document.getElementById('root');
       const wrapper = document.getElementById('loader-wrapper');
-      if (wrapper) {
-        // 给一点额外的时间让首屏渲染更丝滑
-        setTimeout(() => {
-          wrapper.classList.add('loaded');
-          // 动画结束后彻底移除，减少 DOM 压力
-          setTimeout(() => wrapper.remove(), 800);
-        }, 500);
-      }
-    });
-
-    // 备用方案：如果由于某种原因 load 事件没触发，或者耗时太久
-    setTimeout(() => {
-      const wrapper = document.getElementById('loader-wrapper');
-      if (wrapper) {
+      if (root && root.children.length > 0 && wrapper) {
         wrapper.classList.add('loaded');
         setTimeout(() => wrapper.remove(), 800);
+        splashObserver.disconnect();
       }
-    }, 5000);
+    });
+    splashObserver.observe(document.getElementById('root'), { childList: true });
+
+    // 备用方案：防止由于异常导致永久白屏 (3.5s 强制关闭)
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        const wrapper = document.getElementById('loader-wrapper');
+        if (wrapper && !wrapper.classList.contains('loaded')) {
+          wrapper.classList.add('loaded');
+          setTimeout(() => wrapper.remove(), 800);
+          splashObserver.disconnect();
+        }
+      }, 3500);
+    });
 
     // 日志管理能力修复脚本 (注入 UI 按钮)
     (function () {
@@ -360,37 +357,27 @@
       });
     })();
 
-    // 头像源自动迁移脚本 (Auto-Migrate to Cravatar)
-    // 检测当前配置是否仍为 Gravatar，如果是，则自动修正为 Cravatar
+    // 头像源自动迁移脚本 (Auto-Migrate to GitHub Static Avatar)
     (async function migrateAvatarSource() {
+      const GITHUB_AVATAR = 'https://raw.githubusercontent.com/zztap/xa-note/main/avatar.png#';
       try {
-        // 1. 获取当前设置
-        const res = await fetch('/api/settings/public');
-        const settings = await res.json();
+        // 先检查是否已登录 (POST /api/settings 需要认证)
+        const authCheck = await fetch('/api/settings');
+        if (!authCheck.ok) return;
 
-        // 2. 检查是否需要迁移
+        const settings = await authCheck.json();
         const currentPrefix = settings['site.avatar_prefix'];
-        if (currentPrefix && currentPrefix.includes('gravatar.com')) {
-          console.log('Detecting legacy Gravatar setting, migrating to Cravatar...');
 
-          // 3. 执行更新 (尝试调用 update 接口)
-          // 注意：此接口通常需要登录态。如果当前用户未登录，此操作将失败（静默失败即可，下次管理员登录时会再次触发）
-          const updateRes = await fetch('/api/settings', {
+        if (currentPrefix && !currentPrefix.includes('githubusercontent.com')) {
+          console.log('📦 正在将数据库头像源修正为 GitHub...');
+          await fetch('/api/settings', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              'site.avatar_prefix': 'https://www.cravatar.cn/avatar/'
-            })
+            body: JSON.stringify({ 'site.avatar_prefix': GITHUB_AVATAR })
           });
-
-          if (updateRes.ok) {
-            console.log('Avatar source successfully migrated to Cravatar.cn');
-            // 可选：提示用户刷新
-            // alert('系统配置已优化，请刷新页面以应用最新的头像源。');
-          }
         }
       } catch (e) {
-        console.warn('Avatar migration check failed:', e);
+        console.warn('Avatar migration check skipped:', e);
       }
     })();
 
