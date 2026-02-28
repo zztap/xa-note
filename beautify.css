@@ -256,3 +256,55 @@ button:active {
 .md-editor-code {
     width: fit-content !important;
 }
+
+/* --- 现代极简自定义滚动条 (Modern Glass Scrollbar) [B4] --- */
+/* WebKit (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 10px;
+    border: 1px solid transparent;
+    background-clip: content-box;
+    transition: background 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 侧边栏专属：更纤细隐形 */
+aside ::-webkit-scrollbar {
+    width: 4px;
+}
+
+aside ::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.03);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.15);
+    background-clip: content-box;
+}
+
+/* Dark Mode 适配 */
+.dark ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* Firefox 兼容性支撑 */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.08) transparent;
+}
+
+.dark * {
+    scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+}
