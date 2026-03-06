@@ -252,9 +252,11 @@ button:active {
 }
 
 /* --- 极简自适应代码框 (Minimal Adaptive Code Block v1.2.7) --- */
-/* 仅一行 CSS，实现宽度随内容自适应且零侵入性 */
-.md-editor-code {
-    width: fit-content !important;
+/* 安全的代码容器：限制最大宽度且超出部分提供滚动条，避免撑爆外层 flex 布局 */
+.md-editor-code,
+.md-editor-preview pre {
+    max-width: 100% !important;
+    overflow-x: auto !important;
 }
 
 /* --- 现代极简自定义滚动条 (Modern Glass Scrollbar) [B4] --- */
