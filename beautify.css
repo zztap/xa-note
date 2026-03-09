@@ -259,6 +259,35 @@ button:active {
     overflow-x: auto !important;
 }
 
+/* --- Flexbox 布局固化 (Universal Layout Stability Fix) --- */
+/* 核心逻辑：防止 Flex 子元素被其内部的长内容（如超长代码、表格或连续字符）撑开。
+   min-width: 0 是破解 Flexbox 自动最小宽度限制的关键。 */
+
+/* 1. 针对主内容区域的全局约束 */
+main,
+.flex-1,
+.flex-auto {
+    min-width: 0 !important;
+}
+
+/* 2. 针对特定层级的加固（解决 Desktop 带 TOC 情况下的按钮位移） */
+main .hidden.md\:flex.w-full>.flex-1,
+div#root .flex.flex-1.overflow-hidden {
+    min-width: 0 !important;
+    overflow-x: hidden !important;
+    /* 确保容器自身不产生横滚，由内部组件滚动 */
+}
+
+/* 3. 针对内容展示区的滚动条自动托管 */
+.editor-content-area,
+.md-editor-preview,
+article {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    min-width: 0 !important;
+}
+
 /* --- 现代极简自定义滚动条 (Modern Glass Scrollbar) [B4] --- */
 /* WebKit (Chrome, Safari, Edge) */
 ::-webkit-scrollbar {
